@@ -28,6 +28,7 @@ func (c *toJSON) Convert(src []byte) (dst []byte, err error) {
 	}
 
 	c.buffer.Reset()
+	c.buffer.Grow(proto.Size(c.message))
 	err = marshaller.Marshal(c.buffer, c.message)
 	return c.buffer.Bytes(), err
 }
