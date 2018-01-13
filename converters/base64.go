@@ -10,7 +10,7 @@ type encoder struct {
 	buffer *bytes.Buffer
 }
 
-func (c encoder) Convert(src []byte) (dst []byte, err error) {
+func (c *encoder) Convert(src []byte) (dst []byte, err error) {
 	c.buffer.Reset()
 	encoder := base64.NewEncoder(base64.StdEncoding, c.buffer)
 	_, err = encoder.Write(src)
@@ -28,7 +28,7 @@ type decoder struct {
 	buffer *bytes.Buffer
 }
 
-func (c decoder) Convert(src []byte) (dst []byte, err error) {
+func (c *decoder) Convert(src []byte) (dst []byte, err error) {
 	c.buffer.Reset()
 	decoder := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(src))
 	_, err = c.buffer.ReadFrom(decoder)

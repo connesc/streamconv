@@ -38,10 +38,10 @@ func main() {
 	// splitter := readers.NewSingleReader(os.Stdin)
 	// splitter := readers.NewVarintReader(os.Stdin)
 	converters := []streamconv.Converter{
-		// converters.NewProtobufFromJSON("test.proto", "main.SearchRequest"),
+		converters.NewProtobufFromJSON("test.proto", "main.SearchRequest"),
 		converters.NewBase64Encode(),
 		converters.NewBase64Decode(),
-		// converters.NewProtobufToJSON("test.proto", "main.SearchRequest"),
+		converters.NewProtobufToJSON("test.proto", "main.SearchRequest"),
 	}
 	joiner := writers.NewJoinWriter(os.Stdout, "\n")
 	// joiner := writers.NewVarintWriter(os.Stdout)
