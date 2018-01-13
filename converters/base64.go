@@ -1,32 +1,40 @@
 package converters
 
 import (
+	"bytes"
 	"encoding/base64"
 	"streamconv"
 )
 
-// TODO: reuse buffers
+type encoder struct {
+	buffer *bytes.Buffer
+}
 
-type encoder struct{}
-
-func (encoder) Convert(src []byte) (dst []byte, err error) {
-	dst = make([]byte, base64.StdEncoding.EncodedLen(len(src)))
-	base64.StdEncoding.Encode(dst, src)
-	return dst, nil
+func (c encoder) Convert(src []byte) (dst []byte, err error) {
+	c.buffer.Reset()
+	encoder := base64.NewEncoder(base64.StdEncoding, c.buffer)
+	_, err = encoder.Write(src)
+	if err == nil {
+		err = encoder.Close()
+	}
+	return c.buffer.Bytes(), err
 }
 
 func NewBase64Encode() streamconv.Converter {
-	return &encoder{}
+	return &encoder{&bytes.Buffer{}}
 }
 
-type decoder struct{}
+type decoder struct {
+	buffer *bytes.Buffer
+}
 
-func (decoder) Convert(src []byte) (dst []byte, err error) {
-	dst = make([]byte, base64.StdEncoding.DecodedLen(len(src)))
-	n, err := base64.StdEncoding.Decode(dst, src)
-	return dst[:n], err
+func (c decoder) Convert(src []byte) (dst []byte, err error) {
+	c.buffer.Reset()
+	decoder := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(src))
+	_, err = c.buffer.ReadFrom(decoder)
+	return c.buffer.Bytes(), err
 }
 
 func NewBase64Decode() streamconv.Converter {
-	return &decoder{}
+	return &decoder{&bytes.Buffer{}}
 }

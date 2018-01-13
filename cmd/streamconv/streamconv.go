@@ -34,8 +34,8 @@ func streamConv(splitter streamconv.ItemReader, converters []streamconv.Converte
 
 func main() {
 	// splitter := readers.NewSplitReader(os.Stdin)
-	// splitter := readers.NewJSONReader(os.Stdin)
-	splitter := readers.NewSingleReader(os.Stdin)
+	splitter := readers.NewJSONReader(os.Stdin)
+	// splitter := readers.NewSingleReader(os.Stdin)
 	// splitter := readers.NewVarintReader(os.Stdin)
 	converters := []streamconv.Converter{
 		// converters.NewProtobufFromJSON("test.proto", "main.SearchRequest"),
