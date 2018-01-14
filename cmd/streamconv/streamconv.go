@@ -37,6 +37,7 @@ func main() {
 	splitter := readers.NewJSONReader(os.Stdin)
 	// splitter := readers.NewSingleReader(os.Stdin)
 	// splitter := readers.NewVarintReader(os.Stdin)
+	// splitter := readers.NewWindowReader(os.Stdin, 3000, 3000, false)
 	converters := []streamconv.Converter{
 		converters.NewProtobufFromJSON("test.proto", "main.SearchRequest"),
 		converters.NewBase64Encode(),
