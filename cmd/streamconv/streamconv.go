@@ -33,8 +33,8 @@ func streamConv(splitter streamconv.ItemReader, converters []streamconv.Converte
 }
 
 func main() {
-	// splitter := readers.NewSplitReader(os.Stdin)
-	splitter := readers.NewJSONReader(os.Stdin)
+	splitter := readers.NewSplitReader(os.Stdin, "\n")
+	// splitter := readers.NewJSONReader(os.Stdin)
 	// splitter := readers.NewSingleReader(os.Stdin)
 	// splitter := readers.NewVarintReader(os.Stdin)
 	// splitter := readers.NewWindowReader(os.Stdin, 3000, 3000, false)
