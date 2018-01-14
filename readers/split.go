@@ -2,6 +2,7 @@ package readers
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"streamconv"
 )
@@ -10,16 +11,18 @@ type splitReader struct {
 	scanner *bufio.Scanner
 }
 
-// TODO: handle custom delimiter
+// TODO: improve streaming and handle custom delimiter
 
-func (r *splitReader) ReadItem() (item []byte, err error) {
+func (r *splitReader) ReadItem() (item io.Reader, err error) {
 	if !r.scanner.Scan() {
 		return nil, io.EOF
 	}
 
-	return r.scanner.Bytes(), r.scanner.Err()
+	return bytes.NewReader(r.scanner.Bytes()), r.scanner.Err()
 }
 
 func NewSplitReader(in io.Reader) streamconv.ItemReader {
-	return &splitReader{bufio.NewScanner(in)}
+	return &splitReader{
+		scanner: bufio.NewScanner(in),
+	}
 }

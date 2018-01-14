@@ -2,6 +2,7 @@ package converters
 
 import (
 	"bytes"
+	"io"
 	"streamconv"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -21,16 +22,26 @@ type toJSON struct {
 	buffer  *bytes.Buffer
 }
 
-func (c *toJSON) Convert(src []byte) (dst []byte, err error) {
-	err = proto.Unmarshal(src, c.message)
+func (c *toJSON) Convert(src io.Reader) (dst io.Reader, err error) {
+	c.buffer.Reset()
+	_, err = c.buffer.ReadFrom(src)
 	if err != nil {
 		return
 	}
 
-	c.buffer.Reset()
-	c.buffer.Grow(proto.Size(c.message))
-	err = marshaller.Marshal(c.buffer, c.message)
-	return c.buffer.Bytes(), err
+	err = proto.Unmarshal(c.buffer.Bytes(), c.message)
+	if err != nil {
+		return
+	}
+
+	pr, pw := io.Pipe()
+
+	go func() {
+		err = marshaller.Marshal(pw, c.message)
+		pw.CloseWithError(err)
+	}()
+
+	return pr, nil
 }
 
 func NewProtobufToJSON(protoFile, messageName string) streamconv.Converter {
@@ -47,15 +58,15 @@ type fromJSON struct {
 	buffer  *proto.Buffer
 }
 
-func (c *fromJSON) Convert(src []byte) (dst []byte, err error) {
-	err = unmarshaller.Unmarshal(bytes.NewReader(src), c.message)
+func (c *fromJSON) Convert(src io.Reader) (dst io.Reader, err error) {
+	err = unmarshaller.Unmarshal(src, c.message)
 	if err != nil {
 		return
 	}
 
 	c.buffer.Reset()
 	err = c.buffer.Marshal(c.message)
-	return c.buffer.Bytes(), err
+	return bytes.NewReader(c.buffer.Bytes()), err
 }
 
 func NewProtobufFromJSON(protoFile, messageName string) streamconv.Converter {

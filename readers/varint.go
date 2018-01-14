@@ -12,19 +12,39 @@ import (
 
 const maxVarintSize = 10 // math.Ceil(64 / 7)
 
-type varintReader struct {
-	in     *bufio.Reader
-	buffer *proto.Buffer
+type fixedReader struct {
+	in   io.Reader
+	size int
 }
 
-func (r *varintReader) ReadItem() (item []byte, err error) {
+func (r *fixedReader) Read(p []byte) (n int, err error) {
+	if r.size <= 0 {
+		return 0, io.EOF
+	}
+	if len(p) > r.size {
+		p = p[0:r.size]
+	}
+	n, err = r.in.Read(p)
+	r.size -= n
+	if err == io.EOF && r.size != 0 {
+		err = io.ErrUnexpectedEOF
+	}
+	return
+}
+
+type varintReader struct {
+	in     *bufio.Reader
+	varint *proto.Buffer
+}
+
+func (r *varintReader) ReadItem() (item io.Reader, err error) {
 	head, err := r.in.Peek(maxVarintSize)
-	if err != nil {
+	if (err == io.EOF && len(head) == 0) || (err != nil && err != io.EOF) {
 		return
 	}
 
-	r.buffer.SetBuf(head)
-	size, err := r.buffer.DecodeVarint()
+	r.varint.SetBuf(head)
+	size, err := r.varint.DecodeVarint()
 	if err != nil {
 		return
 	}
@@ -32,25 +52,18 @@ func (r *varintReader) ReadItem() (item []byte, err error) {
 	if size > math.MaxInt32 {
 		return nil, fmt.Errorf("invalid item size: %v", size)
 	}
-	n := int(size)
 
 	_, err = r.in.Discard(proto.SizeVarint(size))
 	if err != nil {
 		return
 	}
 
-	r.in = bufio.NewReaderSize(r.in, n)
-	item, err = r.in.Peek(n)
-	if err == io.EOF {
-		return nil, io.ErrUnexpectedEOF
-	} else if err != nil {
-		return
-	}
-
-	_, err = r.in.Discard(n)
-	return
+	return &fixedReader{in: r.in, size: int(size)}, nil
 }
 
 func NewVarintReader(in io.Reader) streamconv.ItemReader {
-	return &varintReader{bufio.NewReaderSize(in, maxVarintSize), &proto.Buffer{}}
+	return &varintReader{
+		in:     bufio.NewReaderSize(in, maxVarintSize),
+		varint: &proto.Buffer{},
+	}
 }

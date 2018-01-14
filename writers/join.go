@@ -12,7 +12,7 @@ type joinWriter struct {
 	started bool
 }
 
-func (w *joinWriter) WriteItem(item []byte) (err error) {
+func (w *joinWriter) WriteItem(item io.Reader) (err error) {
 	if w.started && len(w.delim) > 0 {
 		_, err = strings.NewReader(w.delim).WriteTo(w.out)
 		if err != nil {
@@ -20,7 +20,7 @@ func (w *joinWriter) WriteItem(item []byte) (err error) {
 		}
 	}
 
-	_, err = w.out.Write(item)
+	_, err = io.Copy(w.out, item)
 	w.started = true
 	return
 }

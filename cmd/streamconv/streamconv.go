@@ -44,6 +44,7 @@ func main() {
 		converters.NewProtobufToJSON("test.proto", "main.SearchRequest"),
 	}
 	joiner := writers.NewJoinWriter(os.Stdout, "\n")
+	// joiner := writers.NewJoinWriter(os.Stdout, "")
 	// joiner := writers.NewVarintWriter(os.Stdout)
 
 	err := streamConv(splitter, converters, joiner)

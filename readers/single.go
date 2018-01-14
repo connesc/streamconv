@@ -1,7 +1,6 @@
 package readers
 
 import (
-	"bytes"
 	"io"
 	"streamconv"
 )
@@ -11,17 +10,18 @@ type singleReader struct {
 	done bool
 }
 
-func (r *singleReader) ReadItem() (item []byte, err error) {
+func (r *singleReader) ReadItem() (item io.Reader, err error) {
 	if r.done {
 		return nil, io.EOF
 	}
 
-	buffer := bytes.Buffer{}
-	_, err = buffer.ReadFrom(r.in)
 	r.done = true
-	return buffer.Bytes(), err
+	return r.in, nil
 }
 
 func NewSingleReader(in io.Reader) streamconv.ItemReader {
-	return &singleReader{in, false}
+	return &singleReader{
+		in:   in,
+		done: false,
+	}
 }

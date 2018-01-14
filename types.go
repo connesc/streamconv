@@ -1,13 +1,15 @@
 package streamconv
 
+import "io"
+
 type ItemReader interface {
-	ReadItem() (item []byte, err error)
+	ReadItem() (item io.Reader, err error)
 }
 
 type Converter interface {
-	Convert(src []byte) (dst []byte, err error)
+	Convert(input io.Reader) (output io.Reader, err error)
 }
 
 type ItemWriter interface {
-	WriteItem(item []byte) (err error)
+	WriteItem(item io.Reader) (err error)
 }
