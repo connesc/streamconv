@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"streamconv"
 	"streamconv/converters"
@@ -33,6 +34,15 @@ func streamConv(splitter streamconv.ItemReader, converters []streamconv.Converte
 }
 
 func main() {
+	commands, err := parse(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		for index, command := range commands {
+			log.Println(index, ">", strings.Join(command, " "), "<")
+		}
+	}
+
 	splitter := readers.NewSplitReader(os.Stdin, "\n")
 	// splitter := readers.NewJSONReader(os.Stdin)
 	// splitter := readers.NewSingleReader(os.Stdin)
@@ -48,7 +58,7 @@ func main() {
 	// joiner := writers.NewJoinWriter(os.Stdout, "")
 	// joiner := writers.NewVarintWriter(os.Stdout)
 
-	err := streamConv(splitter, converters, joiner)
+	err = streamConv(splitter, converters, joiner)
 	if err != nil && err != io.EOF {
 		log.Fatal(err)
 	}
