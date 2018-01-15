@@ -1,4 +1,4 @@
-package readers
+package splitters
 
 import (
 	"bytes"
@@ -7,18 +7,18 @@ import (
 	"streamconv"
 )
 
-type jsonReader struct {
+type jsonSplitter struct {
 	decoder *json.Decoder
 	buffer  json.RawMessage
 }
 
-func (r *jsonReader) ReadItem() (item io.Reader, err error) {
+func (r *jsonSplitter) ReadItem() (item io.Reader, err error) {
 	err = r.decoder.Decode(&r.buffer)
 	return bytes.NewReader(r.buffer), err
 }
 
-func NewJSONReader(in io.Reader) streamconv.ItemReader {
-	return &jsonReader{
+func NewJSONSplitter(in io.Reader) streamconv.Splitter {
+	return &jsonSplitter{
 		decoder: json.NewDecoder(in),
 	}
 }

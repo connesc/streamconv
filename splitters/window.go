@@ -1,4 +1,4 @@
-package readers
+package splitters
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"streamconv"
 )
 
-type windowReader struct {
+type windowSplitter struct {
 	in      *bufio.Reader
 	size    int
 	step    int
@@ -16,7 +16,7 @@ type windowReader struct {
 	done    bool
 }
 
-func (r *windowReader) ReadItem() (item io.Reader, err error) {
+func (r *windowSplitter) ReadItem() (item io.Reader, err error) {
 	if r.done {
 		return nil, io.EOF
 	}
@@ -46,8 +46,8 @@ func (r *windowReader) ReadItem() (item io.Reader, err error) {
 	return bytes.NewReader(window), nil
 }
 
-func NewWindowReader(in io.Reader, size int, step int, partial bool) streamconv.ItemReader {
-	return &windowReader{
+func NewWindowSplitter(in io.Reader, size int, step int, partial bool) streamconv.Splitter {
+	return &windowSplitter{
 		in:      bufio.NewReaderSize(in, size),
 		size:    size,
 		step:    step,

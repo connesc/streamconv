@@ -2,7 +2,7 @@ package streamconv
 
 import "io"
 
-type ItemReader interface {
+type Splitter interface {
 	ReadItem() (item io.Reader, err error)
 }
 
@@ -10,6 +10,6 @@ type Converter interface {
 	Convert(input io.Reader) (output io.Reader, err error)
 }
 
-type ItemWriter interface {
+type Joiner interface {
 	WriteItem(item io.Reader) (err error)
 }
