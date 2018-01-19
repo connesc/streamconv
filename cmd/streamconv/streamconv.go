@@ -21,6 +21,9 @@ func streamConv(splitter streamconv.Splitter, converters []streamconv.Converter,
 		for _, converter := range converters {
 			item, err = converter.Convert(item)
 			if err != nil {
+				if err == io.EOF {
+					err = io.ErrUnexpectedEOF
+				}
 				return err
 			}
 		}
