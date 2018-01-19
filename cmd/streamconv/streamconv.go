@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 
 	"streamconv"
 	"streamconv/converters"
@@ -19,8 +18,8 @@ func streamConv(splitter streamconv.Splitter, converters []streamconv.Converter,
 			return err
 		}
 
-		for _, Converter := range converters {
-			item, err = Converter.Convert(item)
+		for _, converter := range converters {
+			item, err = converter.Convert(item)
 			if err != nil {
 				return err
 			}
@@ -34,29 +33,44 @@ func streamConv(splitter streamconv.Splitter, converters []streamconv.Converter,
 }
 
 func main() {
+	splitters.RegisterJSONSplitter("json")
+	splitters.RegisterSingleSplitter("single")
+	splitters.RegisterSimpleSplitter("split")
+	splitters.RegisterVarintSplitter("varint")
+	splitters.RegisterWindowSplitter("window")
+	converters.RegisterBase64Encoder("base64.encode")
+	converters.RegisterBase64Decoder("base64.decode")
+	converters.RegisterProtobufToJSON("protobuf.tojson")
+	converters.RegisterProtobufFromJSON("protobuf.fromjson")
+	joiners.RegisterSimpleJoiner("join")
+	joiners.RegisterVarintJoiner("varint")
+
 	commands, err := parse(os.Args[1])
 	if err != nil {
-		log.Fatal(err)
-	} else {
-		for index, command := range commands {
-			log.Println(index, ">", strings.Join(command, " "), "<")
+		log.Fatalln(err)
+	}
+
+	if len(commands) < 2 {
+		log.Fatalln("not enough commands")
+	}
+
+	splitter, err := streamconv.GetSplitter(commands[0], os.Stdin)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	converters := make([]streamconv.Converter, len(commands)-2)
+	for index, command := range commands[1 : len(commands)-1] {
+		converters[index], err = streamconv.GetConverter(command)
+		if err != nil {
+			log.Fatalln(err)
 		}
 	}
 
-	splitter := splitters.NewSimpleSplitter(os.Stdin, "\n")
-	// splitter := splitters.NewJSONSplitter(os.Stdin)
-	// splitter := splitters.NewSingleSplitter(os.Stdin)
-	// splitter := splitters.NewVarintSplitter(os.Stdin)
-	// splitter := splitters.NewWindowSplitter(os.Stdin, 3000, 3000, false)
-	converters := []streamconv.Converter{
-		converters.NewProtobufFromJSON("test.proto", "main.SearchRequest"),
-		converters.NewBase64Encode(),
-		converters.NewBase64Decode(),
-		converters.NewProtobufToJSON("test.proto", "main.SearchRequest"),
+	joiner, err := streamconv.GetJoiner(commands[len(commands)-1], os.Stdout)
+	if err != nil {
+		log.Fatalln(err)
 	}
-	joiner := joiners.NewSimpleJoiner(os.Stdout, "\n")
-	// joiner := joiners.NewJoinJoiner(os.Stdout, "")
-	// joiner := joiners.NewVarintJoiner(os.Stdout)
 
 	err = streamConv(splitter, converters, joiner)
 	if err != nil && err != io.EOF {

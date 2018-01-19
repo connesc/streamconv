@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-type simplerJoiner struct {
+type simpleJoiner struct {
 	out     io.Writer
 	delim   string
 	started bool
 }
 
-func (w *simplerJoiner) WriteItem(item io.Reader) (err error) {
+func (w *simpleJoiner) WriteItem(item io.Reader) (err error) {
 	if w.started && len(w.delim) > 0 {
 		_, err = strings.NewReader(w.delim).WriteTo(w.out)
 		if err != nil {
@@ -26,5 +26,8 @@ func (w *simplerJoiner) WriteItem(item io.Reader) (err error) {
 }
 
 func NewSimpleJoiner(out io.Writer, delim string) streamconv.Joiner {
-	return &simplerJoiner{out, delim, false}
+	return &simpleJoiner{
+		out:     out,
+		delim:   delim,
+		started: false}
 }

@@ -22,12 +22,11 @@ func (r *simpleSplitter) ReadItem() (item io.Reader, err error) {
 	return bytes.NewReader(r.scanner.Bytes()), r.scanner.Err()
 }
 
-func NewSimpleSplitter(in io.Reader, delim string) streamconv.Splitter {
+func NewSimpleSplitter(in io.Reader, delimiter *regexp.Regexp) streamconv.Splitter {
 	scanner := bufio.NewScanner(in)
-	re, _ := regexp.Compile(delim) // TODO: handle error
 
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		indices := re.FindIndex(data)
+		indices := delimiter.FindIndex(data)
 		if indices != nil {
 			advance = indices[1]
 			token = data[0:indices[0]]

@@ -25,7 +25,7 @@ func (c *encoder) Convert(src io.Reader) (dst io.Reader, err error) {
 	return pr, nil
 }
 
-func NewBase64Encode() streamconv.Converter {
+func NewBase64Encoder() streamconv.Converter {
 	return &encoder{base64.StdEncoding}
 }
 
@@ -37,7 +37,7 @@ func (c *decoder) Convert(src io.Reader) (dst io.Reader, err error) {
 	return base64.NewDecoder(c.encoding, src), nil
 }
 
-func NewBase64Decode() streamconv.Converter {
+func NewBase64Decoder() streamconv.Converter {
 	return &decoder{
 		encoding: base64.StdEncoding,
 	}
