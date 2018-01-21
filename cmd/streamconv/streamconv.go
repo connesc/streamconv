@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/spf13/pflag"
+
 	"streamconv"
 	"streamconv/converters"
 	"streamconv/joiners"
@@ -49,9 +51,28 @@ func main() {
 	joiners.RegisterSimpleJoiner("join")
 	joiners.RegisterVarintJoiner("varint")
 
-	// TODO: main CLI
+	help := false
+	pflag.BoolVarP(&help, "help", "h", help, "print the general help, or the help of the given command")
 
-	commands, err := parse(os.Args[1])
+	pflag.Parse()
+
+	if help {
+		if pflag.NArg() == 0 {
+			pflag.Usage()
+		} else {
+			err := streamconv.PrintUsage(pflag.Arg(0), os.Stdout)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+		return
+	}
+
+	if pflag.NArg() != 1 {
+		log.Fatalf("invalid number of arguments (expected 1, got %v)\n", pflag.NArg())
+	}
+
+	commands, err := parse(pflag.Arg(0))
 	if err != nil {
 		log.Fatalln(err)
 	}
