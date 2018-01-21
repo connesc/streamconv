@@ -10,6 +10,8 @@ func parse(program string) (commands [][]string, err error) {
 	tokens := make([]string, 0)
 	token := &bytes.Buffer{}
 
+	escaped := false
+
 	quoted := false
 	var quote rune
 
@@ -28,6 +30,26 @@ func parse(program string) (commands [][]string, err error) {
 
 	for _, char := range program {
 		switch {
+		case escaped:
+			switch char {
+			case 'b':
+				char = '\b'
+			case 'f':
+				char = '\f'
+			case 'n':
+				char = '\n'
+			case 'r':
+				char = '\r'
+			case 't':
+				char = '\t'
+			}
+			escaped = false
+			_, err = token.WriteRune(char)
+			if err != nil {
+				return
+			}
+		case char == '\\':
+			escaped = true
 		case quoted:
 			if char == quote {
 				quoted = false
