@@ -3,7 +3,8 @@ package splitters
 import (
 	"fmt"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type jsonSplitterCommand struct {

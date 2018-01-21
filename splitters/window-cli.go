@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 
 	"github.com/spf13/pflag"
 )

@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type jsonSplitter struct {

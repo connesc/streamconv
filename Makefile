@@ -1,4 +1,4 @@
 .PHONY: build
 
 build:
-	go build streamconv/cmd/streamconv
+	go build github.com/connesc/streamconv/cmd/streamconv

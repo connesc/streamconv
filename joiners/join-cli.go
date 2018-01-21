@@ -3,7 +3,8 @@ package joiners
 import (
 	"fmt"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type simpleJoinerCommand struct {

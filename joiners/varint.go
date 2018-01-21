@@ -3,7 +3,8 @@ package joiners
 import (
 	"bytes"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 
 	"github.com/golang/protobuf/proto"
 )

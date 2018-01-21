@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 
 	"github.com/golang/protobuf/proto"
 )

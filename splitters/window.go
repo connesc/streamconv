@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type windowSplitter struct {

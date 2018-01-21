@@ -3,7 +3,8 @@ package converters
 import (
 	"fmt"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type protobufToJSONCommand struct {

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type simpleSplitterCommand struct {

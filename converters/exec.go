@@ -3,7 +3,8 @@ package converters
 import (
 	"io"
 	"os/exec"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type executor struct {

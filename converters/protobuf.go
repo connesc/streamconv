@@ -3,7 +3,8 @@ package converters
 import (
 	"bytes"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"

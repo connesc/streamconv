@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"streamconv"
-	"streamconv/converters"
-	"streamconv/joiners"
-	"streamconv/splitters"
+	"github.com/connesc/streamconv"
+	"github.com/connesc/streamconv/converters"
+	"github.com/connesc/streamconv/joiners"
+	"github.com/connesc/streamconv/splitters"
 )
 
 func streamConv(splitter streamconv.Splitter, converters []streamconv.Converter, joiner streamconv.Joiner) (err error) {

@@ -5,7 +5,8 @@ import (
 	"bytes"
 	"io"
 	"regexp"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type simpleSplitter struct {

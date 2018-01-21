@@ -2,8 +2,9 @@ package joiners
 
 import (
 	"io"
-	"streamconv"
 	"strings"
+
+	"github.com/connesc/streamconv"
 )
 
 type simpleJoiner struct {

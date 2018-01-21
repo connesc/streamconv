@@ -3,7 +3,8 @@ package converters
 import (
 	"encoding/base64"
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type encoder struct {

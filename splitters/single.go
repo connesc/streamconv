@@ -2,7 +2,8 @@ package splitters
 
 import (
 	"io"
-	"streamconv"
+
+	"github.com/connesc/streamconv"
 )
 
 type singleSplitter struct {
