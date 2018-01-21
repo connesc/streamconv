@@ -20,7 +20,7 @@ func (c *protobufToJSONCommand) Parse(args []string) (converter streamconv.Conve
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return NewProtobufToJSON(args[0], args[1]), nil
+	return NewProtobufToJSON(args[0], args[1])
 }
 
 func NewProtobufToJSONCommand(name string) (command streamconv.ConverterCommand) {
@@ -45,7 +45,7 @@ func (c *protobufFromJSONCommand) Parse(args []string) (converter streamconv.Con
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return NewProtobufFromJSON(args[0], args[1]), nil
+	return NewProtobufFromJSON(args[0], args[1])
 }
 
 func NewProtobufFromJSONCommand(name string) (command streamconv.ConverterCommand) {

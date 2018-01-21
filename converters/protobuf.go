@@ -11,8 +11,6 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-// TODO: handle errors
-
 var parser = protoparse.Parser{}
 var marshaller = jsonpb.Marshaler{}
 var unmarshaller = jsonpb.Unmarshaler{}
@@ -44,13 +42,17 @@ func (c *toJSON) Convert(src io.Reader) (dst io.Reader, err error) {
 	return pr, nil
 }
 
-func NewProtobufToJSON(protoFile, messageName string) streamconv.Converter {
-	// TODO: handle errors
-	files, _ := parser.ParseFiles(protoFile)
+func NewProtobufToJSON(protoFile, messageName string) (converter streamconv.Converter, err error) {
+	files, err := parser.ParseFiles(protoFile)
+	if err != nil {
+		return
+	}
+
 	descriptor := files[0].FindMessage(messageName)
 	message := dynamic.NewMessage(descriptor)
 
-	return &toJSON{message, &bytes.Buffer{}}
+	converter = &toJSON{message, &bytes.Buffer{}}
+	return
 }
 
 type fromJSON struct {
@@ -69,11 +71,15 @@ func (c *fromJSON) Convert(src io.Reader) (dst io.Reader, err error) {
 	return bytes.NewReader(c.buffer.Bytes()), err
 }
 
-func NewProtobufFromJSON(protoFile, messageName string) streamconv.Converter {
-	// TODO: handle errors
-	files, _ := parser.ParseFiles(protoFile)
+func NewProtobufFromJSON(protoFile, messageName string) (converter streamconv.Converter, err error) {
+	files, err := parser.ParseFiles(protoFile)
+	if err != nil {
+		return
+	}
+
 	descriptor := files[0].FindMessage(messageName)
 	message := dynamic.NewMessage(descriptor)
 
-	return &fromJSON{message, &proto.Buffer{}}
+	converter = &fromJSON{message, &proto.Buffer{}}
+	return
 }
