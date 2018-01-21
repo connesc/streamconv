@@ -10,12 +10,12 @@ type varintJoinerCommand struct {
 	name string
 }
 
-func (b *varintJoinerCommand) PrintUsage(output io.Writer) (err error) {
+func (c *varintJoinerCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *varintJoinerCommand) Parse(args []string, out io.Writer) (joiner streamconv.Joiner, err error) {
+func (c *varintJoinerCommand) Parse(args []string, out io.Writer) (joiner streamconv.Joiner, err error) {
 	if len(args) > 0 {
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}

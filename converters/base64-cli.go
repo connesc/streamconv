@@ -10,12 +10,12 @@ type base64EncoderCommand struct {
 	name string
 }
 
-func (b *base64EncoderCommand) PrintUsage(output io.Writer) (err error) {
+func (c *base64EncoderCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *base64EncoderCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *base64EncoderCommand) Parse(args []string) (converter streamconv.Converter, err error) {
 	if len(args) != 0 {
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
@@ -35,12 +35,12 @@ type base64DecoderCommand struct {
 	name string
 }
 
-func (b *base64DecoderCommand) PrintUsage(output io.Writer) (err error) {
+func (c *base64DecoderCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *base64DecoderCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *base64DecoderCommand) Parse(args []string) (converter streamconv.Converter, err error) {
 	if len(args) != 0 {
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}

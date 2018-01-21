@@ -17,23 +17,23 @@ type windowSplitterOptions struct {
 	partial bool
 }
 
-func (b *windowSplitterCommand) newFlagSet() (flags *pflag.FlagSet, options *windowSplitterOptions) {
+func (c *windowSplitterCommand) newFlagSet() (flags *pflag.FlagSet, options *windowSplitterOptions) {
 	options = &windowSplitterOptions{}
-	flags = pflag.NewFlagSet(b.name, pflag.ContinueOnError)
+	flags = pflag.NewFlagSet(c.name, pflag.ContinueOnError)
 	flags.Usage = func() {}
 	flags.BoolVar(&options.partial, "partial", false, "include partial groups")
 	return
 }
 
-func (b *windowSplitterCommand) PrintUsage(output io.Writer) (err error) {
-	flags, _ := b.newFlagSet()
+func (c *windowSplitterCommand) PrintUsage(output io.Writer) (err error) {
+	flags, _ := c.newFlagSet()
 	flags.SetOutput(output)
 	flags.PrintDefaults()
 	return
 }
 
-func (b *windowSplitterCommand) Parse(args []string, in io.Reader) (splitter streamconv.Splitter, err error) {
-	flags, options := b.newFlagSet()
+func (c *windowSplitterCommand) Parse(args []string, in io.Reader) (splitter streamconv.Splitter, err error) {
+	flags, options := c.newFlagSet()
 	err = flags.Parse(args)
 	if err != nil {
 		return

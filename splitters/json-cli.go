@@ -10,12 +10,12 @@ type jsonSplitterCommand struct {
 	name string
 }
 
-func (b *jsonSplitterCommand) PrintUsage(output io.Writer) (err error) {
+func (c *jsonSplitterCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *jsonSplitterCommand) Parse(args []string, in io.Reader) (splitter streamconv.Splitter, err error) {
+func (c *jsonSplitterCommand) Parse(args []string, in io.Reader) (splitter streamconv.Splitter, err error) {
 	if len(args) > 0 {
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}

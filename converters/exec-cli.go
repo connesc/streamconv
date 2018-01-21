@@ -10,12 +10,12 @@ type executorCommand struct {
 	name string
 }
 
-func (b *executorCommand) PrintUsage(output io.Writer) (err error) {
+func (c *executorCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *executorCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *executorCommand) Parse(args []string) (converter streamconv.Converter, err error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("at least one argument is expected")
 	}

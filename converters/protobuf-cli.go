@@ -10,12 +10,12 @@ type protobufToJSONCommand struct {
 	name string
 }
 
-func (b *protobufToJSONCommand) PrintUsage(output io.Writer) (err error) {
+func (c *protobufToJSONCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *protobufToJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *protobufToJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
@@ -35,12 +35,12 @@ type protobufFromJSONCommand struct {
 	name string
 }
 
-func (b *protobufFromJSONCommand) PrintUsage(output io.Writer) (err error) {
+func (c *protobufFromJSONCommand) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (b *protobufFromJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *protobufFromJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
