@@ -9,6 +9,8 @@ import (
 func parse(program string) (commands [][]string, err error) {
 	commands = make([][]string, 0)
 	tokens := make([]string, 0)
+
+	tokenStarted := false
 	token := &bytes.Buffer{}
 
 	escaped := false
@@ -17,10 +19,11 @@ func parse(program string) (commands [][]string, err error) {
 	var quote rune
 
 	endToken := func() {
-		if token.Len() > 0 {
+		if tokenStarted {
 			tokens = append(tokens, string(token.Bytes()))
 			token.Reset()
 		}
+		tokenStarted = false
 	}
 
 	endCommand := func() {
@@ -51,6 +54,7 @@ func parse(program string) (commands [][]string, err error) {
 			}
 		case char == '\\':
 			escaped = true
+			tokenStarted = true
 		case quoted:
 			if char == quote {
 				quoted = false
@@ -67,7 +71,9 @@ func parse(program string) (commands [][]string, err error) {
 		case char == '\'' || char == '"':
 			quoted = true
 			quote = char
+			tokenStarted = true
 		default:
+			tokenStarted = true
 			_, err = token.WriteRune(char)
 			if err != nil {
 				return
