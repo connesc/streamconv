@@ -3,57 +3,51 @@ package app
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/connesc/streamconv"
 )
 
-type App struct {
-	splitter   streamconv.Splitter
-	converters []streamconv.Converter
-	joiner     streamconv.Joiner
+type App interface {
+	Run(dst io.Writer, src io.Reader) error
 }
 
-func New(program string) (app *App, err error) {
+type streamconvApp [][]string
+
+func New(program string) (app App, err error) {
 	commands, err := parse(program)
+	return streamconvApp(commands), err
+}
+
+func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
+	if len(app) < 2 {
+		return fmt.Errorf("not enough commands")
+	}
+
+	splitter, err := streamconv.GetSplitter(app[0], src)
 	if err != nil {
 		return
 	}
 
-	if len(commands) < 2 {
-		return nil, fmt.Errorf("not enough commands")
-	}
-
-	splitter, err := streamconv.GetSplitter(commands[0], os.Stdin)
-	if err != nil {
-		return
-	}
-
-	converters := make([]streamconv.Converter, len(commands)-2)
-	for index, command := range commands[1 : len(commands)-1] {
+	converters := make([]streamconv.Converter, len(app)-2)
+	for index, command := range app[1 : len(app)-1] {
 		converters[index], err = streamconv.GetConverter(command)
 		if err != nil {
 			return
 		}
 	}
 
-	joiner, err := streamconv.GetJoiner(commands[len(commands)-1], os.Stdout)
+	joiner, err := streamconv.GetJoiner(app[len(app)-1], dst)
 	if err != nil {
 		return
 	}
 
-	app = &App{splitter, converters, joiner}
-	return
-}
-
-func (app *App) Run() (err error) {
 	for {
-		item, err := app.splitter.ReadItem()
+		item, err := splitter.ReadItem()
 		if err != nil {
 			return err
 		}
 
-		for _, converter := range app.converters {
+		for _, converter := range converters {
 			item, err = converter.Convert(item)
 			if err != nil {
 				if err == io.EOF {
@@ -63,7 +57,7 @@ func (app *App) Run() (err error) {
 			}
 		}
 
-		err = app.joiner.WriteItem(item)
+		err = joiner.WriteItem(item)
 		if err != nil {
 			return err
 		}

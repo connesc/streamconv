@@ -54,7 +54,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = app.Run()
+	err = app.Run(os.Stdout, os.Stdin)
 	if err != nil && err != io.EOF {
 		log.Fatal(err)
 	}
