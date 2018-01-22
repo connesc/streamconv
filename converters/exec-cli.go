@@ -28,6 +28,6 @@ func NewExecutorCommand(name string) (command streamconv.ConverterCommand) {
 	return &executorCommand{name}
 }
 
-func RegisterExecutorCommand(name string) {
+func RegisterExecutor(name string) {
 	streamconv.RegisterConverter(name, NewExecutorCommand(name))
 }

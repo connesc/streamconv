@@ -22,7 +22,7 @@ func main() {
 	splitters.RegisterWindowSplitter("window")
 	converters.RegisterBase64Encoder("base64.encode")
 	converters.RegisterBase64Decoder("base64.decode")
-	converters.RegisterExecutorCommand("exec")
+	converters.RegisterExecutor("exec")
 	converters.RegisterProtobufToJSON("protobuf.tojson")
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
 	joiners.RegisterSimpleJoiner("join")
