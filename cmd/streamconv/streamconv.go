@@ -8,34 +8,11 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/connesc/streamconv"
+	"github.com/connesc/streamconv/app"
 	"github.com/connesc/streamconv/converters"
 	"github.com/connesc/streamconv/joiners"
 	"github.com/connesc/streamconv/splitters"
 )
-
-func streamConv(splitter streamconv.Splitter, converters []streamconv.Converter, joiner streamconv.Joiner) (err error) {
-	for {
-		item, err := splitter.ReadItem()
-		if err != nil {
-			return err
-		}
-
-		for _, converter := range converters {
-			item, err = converter.Convert(item)
-			if err != nil {
-				if err == io.EOF {
-					err = io.ErrUnexpectedEOF
-				}
-				return err
-			}
-		}
-
-		err = joiner.WriteItem(item)
-		if err != nil {
-			return err
-		}
-	}
-}
 
 func main() {
 	splitters.RegisterJSONSplitter("json")
@@ -72,34 +49,12 @@ func main() {
 		log.Fatalf("invalid number of arguments (expected 1, got %v)\n", pflag.NArg())
 	}
 
-	commands, err := parse(pflag.Arg(0))
+	app, err := app.New(pflag.Arg(0))
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if len(commands) < 2 {
-		log.Fatalln("not enough commands")
-	}
-
-	splitter, err := streamconv.GetSplitter(commands[0], os.Stdin)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	converters := make([]streamconv.Converter, len(commands)-2)
-	for index, command := range commands[1 : len(commands)-1] {
-		converters[index], err = streamconv.GetConverter(command)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
-
-	joiner, err := streamconv.GetJoiner(commands[len(commands)-1], os.Stdout)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = streamConv(splitter, converters, joiner)
+	err = app.Run()
 	if err != nil && err != io.EOF {
 		log.Fatal(err)
 	}
