@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"io"
 	"unicode"
 )
 
@@ -72,6 +73,10 @@ func parse(program string) (commands [][]string, err error) {
 				return
 			}
 		}
+	}
+
+	if escaped || quoted {
+		return nil, io.ErrUnexpectedEOF
 	}
 
 	endCommand()
