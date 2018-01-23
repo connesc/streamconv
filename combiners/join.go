@@ -1,4 +1,4 @@
-package joiners
+package combiners
 
 import (
 	"io"
@@ -7,13 +7,13 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type simpleJoiner struct {
+type joinCombiner struct {
 	out     io.Writer
 	delim   string
 	started bool
 }
 
-func (w *simpleJoiner) WriteItem(item io.Reader) (err error) {
+func (w *joinCombiner) WriteItem(item io.Reader) (err error) {
 	if w.started && len(w.delim) > 0 {
 		_, err = strings.NewReader(w.delim).WriteTo(w.out)
 		if err != nil {
@@ -26,8 +26,8 @@ func (w *simpleJoiner) WriteItem(item io.Reader) (err error) {
 	return
 }
 
-func NewSimpleJoiner(out io.Writer, delim string) streamconv.Joiner {
-	return &simpleJoiner{
+func NewJoinCombiner(out io.Writer, delim string) streamconv.ItemWriter {
+	return &joinCombiner{
 		out:     out,
 		delim:   delim,
 		started: false}

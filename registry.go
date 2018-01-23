@@ -6,9 +6,9 @@ import (
 )
 
 var commands = map[string]Command{}
-var splitters = map[string]SplitterCommand{}
+var extractors = map[string]ExtractorCommand{}
 var converters = map[string]ConverterCommand{}
-var joiners = map[string]JoinerCommand{}
+var combiners = map[string]CombinerCommand{}
 
 func getNames(commands map[string]Command) (names []string) {
 	names = make([]string, len(commands))
@@ -24,9 +24,9 @@ func Commands() (names []string) {
 	return getNames(commands)
 }
 
-func RegisterSplitter(name string, splitter SplitterCommand) {
-	commands[name] = splitter
-	splitters[name] = splitter
+func RegisterExtractor(name string, extractor ExtractorCommand) {
+	commands[name] = extractor
+	extractors[name] = extractor
 }
 
 func RegisterConverter(name string, converter ConverterCommand) {
@@ -34,23 +34,23 @@ func RegisterConverter(name string, converter ConverterCommand) {
 	converters[name] = converter
 }
 
-func RegisterJoiner(name string, joiner JoinerCommand) {
-	commands[name] = joiner
-	joiners[name] = joiner
+func RegisterCombiner(name string, combiner CombinerCommand) {
+	commands[name] = combiner
+	combiners[name] = combiner
 }
 
-func GetSplitter(tokens []string, in io.Reader) (splitter Splitter, err error) {
+func GetExtractor(tokens []string, in io.Reader) (extractor ItemReader, err error) {
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("empty splitter command")
+		return nil, fmt.Errorf("empty extractor command")
 	}
-	command, ok := splitters[tokens[0]]
+	command, ok := extractors[tokens[0]]
 	if !ok {
-		return nil, fmt.Errorf("splitter \"%v\" cannot be found", tokens[0])
+		return nil, fmt.Errorf("extractor \"%v\" cannot be found", tokens[0])
 	}
 	return command.Parse(tokens[1:], in)
 }
 
-func ApplyConverter(tokens []string, input Splitter) (output Splitter, err error) {
+func ApplyConverter(tokens []string, in ItemReader) (out ItemReader, err error) {
 	if len(tokens) == 0 {
 		return nil, fmt.Errorf("empty converter command")
 	}
@@ -60,12 +60,12 @@ func ApplyConverter(tokens []string, input Splitter) (output Splitter, err error
 
 	if len(name) > 0 && name[0] == '*' {
 		name = name[1:]
-		command, ok := splitters[name]
+		command, ok := extractors[name]
 		if !ok {
-			return nil, fmt.Errorf("splitter \"%v\" cannot be found", name)
+			return nil, fmt.Errorf("extractor \"%v\" cannot be found", name)
 		}
-		output = &spreadReader{
-			reader:          input,
+		out = &spreadReader{
+			reader:          in,
 			spreaderCommand: command,
 			spreaderArgs:    args,
 		}
@@ -78,8 +78,8 @@ func ApplyConverter(tokens []string, input Splitter) (output Splitter, err error
 		if err != nil {
 			return nil, err
 		}
-		output = &converterReader{
-			reader:    input,
+		out = &converterReader{
+			reader:    in,
 			converter: converter,
 		}
 	}
@@ -87,28 +87,28 @@ func ApplyConverter(tokens []string, input Splitter) (output Splitter, err error
 	return
 }
 
-func GetJoiner(tokens []string, out io.Writer) (joiner Joiner, err error) {
+func GetCombiner(tokens []string, out io.Writer) (combiner ItemWriter, err error) {
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("empty joiner command")
+		return nil, fmt.Errorf("empty combiner command")
 	}
-	command, ok := joiners[tokens[0]]
+	command, ok := combiners[tokens[0]]
 	if !ok {
-		return nil, fmt.Errorf("joiner \"%v\" cannot be found", tokens[0])
+		return nil, fmt.Errorf("combiner \"%v\" cannot be found", tokens[0])
 	}
 	return command.Parse(tokens[1:], out)
 }
 
-func PrintUsage(name string, output io.Writer) (err error) {
+func PrintUsage(name string, out io.Writer) (err error) {
 	command, ok := commands[name]
 	if !ok {
 		return fmt.Errorf("command \"%v\" cannot be found", name)
 	}
-	err = command.PrintUsage(output)
+	err = command.PrintUsage(out)
 	return
 }
 
 type converterReader struct {
-	reader    Splitter
+	reader    ItemReader
 	converter Converter
 }
 
@@ -126,10 +126,10 @@ func (r *converterReader) ReadItem() (item io.Reader, err error) {
 }
 
 type spreadReader struct {
-	reader          Splitter
-	spreaderCommand SplitterCommand
+	reader          ItemReader
+	spreaderCommand ExtractorCommand
 	spreaderArgs    []string
-	spreader        Splitter
+	spreader        ItemReader
 }
 
 func (r *spreadReader) ReadItem() (item io.Reader, err error) {
@@ -140,13 +140,13 @@ func (r *spreadReader) ReadItem() (item io.Reader, err error) {
 	}
 
 	for err == io.EOF {
-		var input io.Reader
-		input, err = r.reader.ReadItem()
+		var src io.Reader
+		src, err = r.reader.ReadItem()
 		if err != nil {
 			return
 		}
 
-		r.spreader, err = r.spreaderCommand.Parse(r.spreaderArgs, input)
+		r.spreader, err = r.spreaderCommand.Parse(r.spreaderArgs, src)
 		if err != nil {
 			return
 		}

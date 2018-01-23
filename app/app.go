@@ -23,30 +23,30 @@ func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
 		return fmt.Errorf("not enough commands")
 	}
 
-	splitter, err := streamconv.GetSplitter(app[0], src)
+	reader, err := streamconv.GetExtractor(app[0], src)
 	if err != nil {
 		return
 	}
 
 	for _, command := range app[1 : len(app)-1] {
-		splitter, err = streamconv.ApplyConverter(command, splitter)
+		reader, err = streamconv.ApplyConverter(command, reader)
 		if err != nil {
 			return
 		}
 	}
 
-	joiner, err := streamconv.GetJoiner(app[len(app)-1], dst)
+	writer, err := streamconv.GetCombiner(app[len(app)-1], dst)
 	if err != nil {
 		return
 	}
 
 	for {
-		item, err := splitter.ReadItem()
+		item, err := reader.ReadItem()
 		if err != nil {
 			return err
 		}
 
-		err = joiner.WriteItem(item)
+		err = writer.WriteItem(item)
 		if err != nil {
 			return err
 		}

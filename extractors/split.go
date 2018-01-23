@@ -1,4 +1,4 @@
-package splitters
+package extractors
 
 import (
 	"bufio"
@@ -9,13 +9,13 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type simpleSplitter struct {
+type splitExtractor struct {
 	scanner *bufio.Scanner
 }
 
 // TODO: handle errors
 
-func (r *simpleSplitter) ReadItem() (item io.Reader, err error) {
+func (r *splitExtractor) ReadItem() (item io.Reader, err error) {
 	if !r.scanner.Scan() {
 		return nil, io.EOF
 	}
@@ -23,7 +23,7 @@ func (r *simpleSplitter) ReadItem() (item io.Reader, err error) {
 	return bytes.NewReader(r.scanner.Bytes()), r.scanner.Err()
 }
 
-func NewSimpleSplitter(in io.Reader, delimiter *regexp.Regexp) streamconv.Splitter {
+func NewSplitExtractor(in io.Reader, delimiter *regexp.Regexp) streamconv.ItemReader {
 	scanner := bufio.NewScanner(in)
 
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -38,7 +38,7 @@ func NewSimpleSplitter(in io.Reader, delimiter *regexp.Regexp) streamconv.Splitt
 		return
 	})
 
-	return &simpleSplitter{
+	return &splitExtractor{
 		scanner: scanner,
 	}
 }

@@ -1,4 +1,4 @@
-package joiners
+package combiners
 
 import (
 	"bytes"
@@ -9,13 +9,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type varintJoiner struct {
+type varintCombiner struct {
 	out    io.Writer
 	varint *proto.Buffer
 	buffer *bytes.Buffer
 }
 
-func (w *varintJoiner) WriteItem(item io.Reader) (err error) {
+func (w *varintCombiner) WriteItem(item io.Reader) (err error) {
 	n, err := io.Copy(w.buffer, item)
 	if err != nil {
 		return
@@ -36,8 +36,8 @@ func (w *varintJoiner) WriteItem(item io.Reader) (err error) {
 	return
 }
 
-func NewVarintJoiner(out io.Writer) streamconv.Joiner {
-	return &varintJoiner{
+func NewVarintCombiner(out io.Writer) streamconv.ItemWriter {
+	return &varintCombiner{
 		out:    out,
 		varint: &proto.Buffer{},
 		buffer: &bytes.Buffer{},

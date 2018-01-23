@@ -9,25 +9,25 @@ import (
 
 	"github.com/connesc/streamconv"
 	"github.com/connesc/streamconv/app"
+	"github.com/connesc/streamconv/combiners"
 	"github.com/connesc/streamconv/converters"
-	"github.com/connesc/streamconv/joiners"
-	"github.com/connesc/streamconv/splitters"
+	"github.com/connesc/streamconv/extractors"
 )
 
 func main() {
-	splitters.RegisterJSONSplitter("json")
-	splitters.RegisterSingleSplitter("single")
-	splitters.RegisterSimpleSplitter("split")
-	splitters.RegisterVarintSplitter("varint")
-	splitters.RegisterWindowSplitter("window")
+	extractors.RegisterJSONExtractor("json")
+	extractors.RegisterSingleExtractor("single")
+	extractors.RegisterSplitExtractor("split")
+	extractors.RegisterVarintExtractor("varint")
+	extractors.RegisterWindowExtractor("window")
 	converters.RegisterBase64Encoder("base64.encode")
 	converters.RegisterBase64Decoder("base64.decode")
 	converters.RegisterExecutor("exec")
 	converters.RegisterProtobufToJSON("protobuf.tojson")
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
 	converters.RegisterStreamConverter("streamconv")
-	joiners.RegisterSimpleJoiner("join")
-	joiners.RegisterVarintJoiner("varint")
+	combiners.RegisterJoinCombiner("join")
+	combiners.RegisterVarintCombiner("varint")
 
 	help := false
 	pflag.BoolVarP(&help, "help", "h", help, "print the general help, or the help of the given command")

@@ -1,4 +1,4 @@
-package splitters
+package extractors
 
 import (
 	"bufio"
@@ -33,12 +33,12 @@ func (r *fixedReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-type varintSplitter struct {
+type varintExtractor struct {
 	in     *bufio.Reader
 	varint *proto.Buffer
 }
 
-func (r *varintSplitter) ReadItem() (item io.Reader, err error) {
+func (r *varintExtractor) ReadItem() (item io.Reader, err error) {
 	head, err := r.in.Peek(maxVarintSize)
 	if (err == io.EOF && len(head) == 0) || (err != nil && err != io.EOF) {
 		return
@@ -62,8 +62,8 @@ func (r *varintSplitter) ReadItem() (item io.Reader, err error) {
 	return &fixedReader{in: r.in, size: int(size)}, nil
 }
 
-func NewVarintSplitter(in io.Reader) streamconv.Splitter {
-	return &varintSplitter{
+func NewVarintExtractor(in io.Reader) streamconv.ItemReader {
+	return &varintExtractor{
 		in:     bufio.NewReaderSize(in, maxVarintSize),
 		varint: &proto.Buffer{},
 	}

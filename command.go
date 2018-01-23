@@ -8,9 +8,9 @@ type Command interface {
 	PrintUsage(output io.Writer) (err error)
 }
 
-type SplitterCommand interface {
+type ExtractorCommand interface {
 	Command
-	Parse(args []string, in io.Reader) (splitter Splitter, err error)
+	Parse(args []string, in io.Reader) (extractor ItemReader, err error)
 }
 
 type ConverterCommand interface {
@@ -18,7 +18,7 @@ type ConverterCommand interface {
 	Parse(args []string) (converter Converter, err error)
 }
 
-type JoinerCommand interface {
+type CombinerCommand interface {
 	Command
-	Parse(args []string, out io.Writer) (joiner Joiner, err error)
+	Parse(args []string, out io.Writer) (combiner ItemWriter, err error)
 }
