@@ -50,15 +50,41 @@ func GetSplitter(tokens []string, in io.Reader) (splitter Splitter, err error) {
 	return command.Parse(tokens[1:], in)
 }
 
-func GetConverter(tokens []string) (converter Converter, err error) {
+func ApplyConverter(tokens []string, input Splitter) (output Splitter, err error) {
 	if len(tokens) == 0 {
 		return nil, fmt.Errorf("empty converter command")
 	}
-	command, ok := converters[tokens[0]]
-	if !ok {
-		return nil, fmt.Errorf("converter \"%v\" cannot be found", tokens[0])
+
+	name := tokens[0]
+	args := tokens[1:]
+
+	if len(name) > 0 && name[0] == '*' {
+		name = name[1:]
+		command, ok := splitters[name]
+		if !ok {
+			return nil, fmt.Errorf("splitter \"%v\" cannot be found", name)
+		}
+		output = &spreadReader{
+			reader:          input,
+			spreaderCommand: command,
+			spreaderArgs:    args,
+		}
+	} else {
+		command, ok := converters[name]
+		if !ok {
+			return nil, fmt.Errorf("converter \"%v\" cannot be found", name)
+		}
+		converter, err := command.Parse(args)
+		if err != nil {
+			return nil, err
+		}
+		output = &converterReader{
+			reader:    input,
+			converter: converter,
+		}
 	}
-	return command.Parse(tokens[1:])
+
+	return
 }
 
 func GetJoiner(tokens []string, out io.Writer) (joiner Joiner, err error) {
@@ -78,5 +104,55 @@ func PrintUsage(name string, output io.Writer) (err error) {
 		return fmt.Errorf("command \"%v\" cannot be found", name)
 	}
 	err = command.PrintUsage(output)
+	return
+}
+
+type converterReader struct {
+	reader    Splitter
+	converter Converter
+}
+
+func (r *converterReader) ReadItem() (item io.Reader, err error) {
+	item, err = r.reader.ReadItem()
+	if err != nil {
+		return nil, err
+	}
+
+	item, err = r.converter.Convert(item)
+	if err == io.EOF {
+		err = io.ErrUnexpectedEOF
+	}
+	return
+}
+
+type spreadReader struct {
+	reader          Splitter
+	spreaderCommand SplitterCommand
+	spreaderArgs    []string
+	spreader        Splitter
+}
+
+func (r *spreadReader) ReadItem() (item io.Reader, err error) {
+	if r.spreader == nil {
+		err = io.EOF
+	} else {
+		item, err = r.spreader.ReadItem()
+	}
+
+	for err == io.EOF {
+		var input io.Reader
+		input, err = r.reader.ReadItem()
+		if err != nil {
+			return
+		}
+
+		r.spreader, err = r.spreaderCommand.Parse(r.spreaderArgs, input)
+		if err != nil {
+			return
+		}
+
+		item, err = r.spreader.ReadItem()
+	}
+
 	return
 }

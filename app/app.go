@@ -28,9 +28,8 @@ func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
 		return
 	}
 
-	converters := make([]streamconv.Converter, len(app)-2)
-	for index, command := range app[1 : len(app)-1] {
-		converters[index], err = streamconv.GetConverter(command)
+	for _, command := range app[1 : len(app)-1] {
+		splitter, err = streamconv.ApplyConverter(command, splitter)
 		if err != nil {
 			return
 		}
@@ -45,16 +44,6 @@ func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
 		item, err := splitter.ReadItem()
 		if err != nil {
 			return err
-		}
-
-		for _, converter := range converters {
-			item, err = converter.Convert(item)
-			if err != nil {
-				if err == io.EOF {
-					err = io.ErrUnexpectedEOF
-				}
-				return err
-			}
 		}
 
 		err = joiner.WriteItem(item)
