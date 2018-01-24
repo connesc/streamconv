@@ -13,8 +13,6 @@ type splitExtractor struct {
 	scanner *bufio.Scanner
 }
 
-// TODO: handle errors
-
 func (r *splitExtractor) ReadItem() (item io.Reader, err error) {
 	if !r.scanner.Scan() {
 		return nil, io.EOF
