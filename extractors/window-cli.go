@@ -11,6 +11,16 @@ import (
 )
 
 type windowExtractorCommand struct {
+	step    int
+	size    int
+	partial bool
+}
+
+func (c *windowExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
+	return NewWindowExtractor(in, c.step, c.size, c.partial), nil
+}
+
+type windowExtractorCLI struct {
 	name string
 }
 
@@ -18,7 +28,7 @@ type windowExtractorOptions struct {
 	partial bool
 }
 
-func (c *windowExtractorCommand) newFlagSet() (flags *pflag.FlagSet, options *windowExtractorOptions) {
+func (c *windowExtractorCLI) newFlagSet() (flags *pflag.FlagSet, options *windowExtractorOptions) {
 	options = &windowExtractorOptions{}
 	flags = pflag.NewFlagSet(c.name, pflag.ContinueOnError)
 	flags.Usage = func() {}
@@ -26,14 +36,14 @@ func (c *windowExtractorCommand) newFlagSet() (flags *pflag.FlagSet, options *wi
 	return
 }
 
-func (c *windowExtractorCommand) PrintUsage(output io.Writer) (err error) {
+func (c *windowExtractorCLI) PrintUsage(output io.Writer) (err error) {
 	flags, _ := c.newFlagSet()
 	flags.SetOutput(output)
 	flags.PrintDefaults()
 	return
 }
 
-func (c *windowExtractorCommand) Parse(args []string, in io.Reader) (extractor streamconv.ItemReader, err error) {
+func (c *windowExtractorCLI) Parse(args []string) (command streamconv.ExtractorCommand, err error) {
 	flags, options := c.newFlagSet()
 	err = flags.Parse(args)
 	if err != nil {
@@ -61,13 +71,13 @@ func (c *windowExtractorCommand) Parse(args []string, in io.Reader) (extractor s
 		return
 	}
 
-	return NewWindowExtractor(in, int(size), int(step), options.partial), nil
+	return &windowExtractorCommand{int(size), int(step), options.partial}, nil
 }
 
-func NewWindowExtractorCommand(name string) (command streamconv.ExtractorCommand) {
-	return &windowExtractorCommand{name}
+func NewWindowExtractorCLI(name string) (cli streamconv.ExtractorCLI) {
+	return &windowExtractorCLI{name}
 }
 
 func RegisterWindowExtractor(name string) {
-	streamconv.RegisterExtractor(name, NewWindowExtractorCommand(name))
+	streamconv.RegisterExtractor(name, NewWindowExtractorCLI(name))
 }

@@ -8,26 +8,34 @@ import (
 )
 
 type streamConverterCommand struct {
+	program string
+}
+
+func (c *streamConverterCommand) Run() (converter streamconv.Converter, err error) {
+	return NewStreamConverter(c.program)
+}
+
+type streamConverterCLI struct {
 	name string
 }
 
-func (c *streamConverterCommand) PrintUsage(output io.Writer) (err error) {
+func (c *streamConverterCLI) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (c *streamConverterCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *streamConverterCLI) Parse(args []string) (command streamconv.ConverterCommand, err error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("invalid number of arguments (exepcted 1, got %v)", len(args))
 	}
 
-	return NewStreamConverter(args[0])
+	return &streamConverterCommand{args[0]}, nil
 }
 
-func NewStreamConverterCommand(name string) (command streamconv.ConverterCommand) {
-	return &streamConverterCommand{name}
+func NewStreamConverterCLI(name string) (cli streamconv.ConverterCLI) {
+	return &streamConverterCLI{name}
 }
 
 func RegisterStreamConverter(name string) {
-	streamconv.RegisterConverter(name, NewStreamConverterCommand(name))
+	streamconv.RegisterConverter(name, NewStreamConverterCLI(name))
 }

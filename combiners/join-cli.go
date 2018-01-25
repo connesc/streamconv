@@ -8,15 +8,23 @@ import (
 )
 
 type joinCombinerCommand struct {
+	delimiter string
+}
+
+func (c *joinCombinerCommand) Run(out io.Writer) (combiner streamconv.ItemWriter, err error) {
+	return NewJoinCombiner(out, c.delimiter), nil
+}
+
+type joinCombinerCLI struct {
 	name string
 }
 
-func (c *joinCombinerCommand) PrintUsage(output io.Writer) (err error) {
+func (c *joinCombinerCLI) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (c *joinCombinerCommand) Parse(args []string, out io.Writer) (combiner streamconv.ItemWriter, err error) {
+func (c *joinCombinerCLI) Parse(args []string) (command streamconv.CombinerCommand, err error) {
 	if len(args) > 1 {
 		return nil, fmt.Errorf("too many arguments (expected up to 1, got %v)", len(args))
 	}
@@ -26,13 +34,13 @@ func (c *joinCombinerCommand) Parse(args []string, out io.Writer) (combiner stre
 		delimiter = args[0]
 	}
 
-	return NewJoinCombiner(out, delimiter), nil
+	return &joinCombinerCommand{delimiter}, nil
 }
 
-func NewJoinCombinerCommand(name string) (command streamconv.CombinerCommand) {
-	return &joinCombinerCommand{name}
+func NewJoinCombinerCLI(name string) (cli streamconv.CombinerCLI) {
+	return &joinCombinerCLI{name}
 }
 
 func RegisterJoinCombiner(name string) {
-	streamconv.RegisterCombiner(name, NewJoinCombinerCommand(name))
+	streamconv.RegisterCombiner(name, NewJoinCombinerCLI(name))
 }

@@ -7,27 +7,33 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type singleExtractorCommand struct {
+type singleExtractorCommand struct{}
+
+func (c *singleExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
+	return NewSingleExtractor(in), nil
+}
+
+type singleExtractorCLI struct {
 	name string
 }
 
-func (c *singleExtractorCommand) PrintUsage(output io.Writer) (err error) {
+func (c *singleExtractorCLI) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (c *singleExtractorCommand) Parse(args []string, in io.Reader) (extractor streamconv.ItemReader, err error) {
+func (c *singleExtractorCLI) Parse(args []string) (command streamconv.ExtractorCommand, err error) {
 	if len(args) > 0 {
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return NewSingleExtractor(in), nil
+	return &singleExtractorCommand{}, nil
 }
 
-func NewSingleExtractorCommand(name string) (command streamconv.ExtractorCommand) {
-	return &singleExtractorCommand{name}
+func NewSingleExtractorCLI(name string) (cli streamconv.ExtractorCLI) {
+	return &singleExtractorCLI{name}
 }
 
 func RegisterSingleExtractor(name string) {
-	streamconv.RegisterExtractor(name, NewSingleExtractorCommand(name))
+	streamconv.RegisterExtractor(name, NewSingleExtractorCLI(name))
 }

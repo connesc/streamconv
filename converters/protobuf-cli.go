@@ -8,51 +8,69 @@ import (
 )
 
 type protobufToJSONCommand struct {
+	protoFile   string
+	messageName string
+}
+
+func (c *protobufToJSONCommand) Run() (converter streamconv.Converter, err error) {
+	return NewProtobufToJSON(c.protoFile, c.messageName)
+}
+
+type protobufToJSONCLI struct {
 	name string
 }
 
-func (c *protobufToJSONCommand) PrintUsage(output io.Writer) (err error) {
+func (c *protobufToJSONCLI) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (c *protobufToJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *protobufToJSONCLI) Parse(args []string) (command streamconv.ConverterCommand, err error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return NewProtobufToJSON(args[0], args[1])
+	return &protobufToJSONCommand{args[0], args[1]}, nil
 }
 
-func NewProtobufToJSONCommand(name string) (command streamconv.ConverterCommand) {
-	return &protobufToJSONCommand{name}
+func NewProtobufToJSONCLI(name string) (cli streamconv.ConverterCLI) {
+	return &protobufToJSONCLI{name}
 }
 
 func RegisterProtobufToJSON(name string) {
-	streamconv.RegisterConverter(name, NewProtobufToJSONCommand(name))
+	streamconv.RegisterConverter(name, NewProtobufToJSONCLI(name))
 }
 
 type protobufFromJSONCommand struct {
+	protoFile   string
+	messageName string
+}
+
+func (c *protobufFromJSONCommand) Run() (converter streamconv.Converter, err error) {
+	return NewProtobufFromJSON(c.protoFile, c.messageName)
+}
+
+type protobufFromJSONCLI struct {
 	name string
 }
 
-func (c *protobufFromJSONCommand) PrintUsage(output io.Writer) (err error) {
+func (c *protobufFromJSONCLI) PrintUsage(output io.Writer) (err error) {
 	_, err = fmt.Fprintln(output, "TODO")
 	return
 }
 
-func (c *protobufFromJSONCommand) Parse(args []string) (converter streamconv.Converter, err error) {
+func (c *protobufFromJSONCLI) Parse(args []string) (command streamconv.ConverterCommand, err error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return NewProtobufFromJSON(args[0], args[1])
+	return &protobufFromJSONCommand{args[0], args[1]}, nil
 }
 
-func NewProtobufFromJSONCommand(name string) (command streamconv.ConverterCommand) {
-	return &protobufFromJSONCommand{name}
+func NewProtobufFromJSONCLI(name string) (cli streamconv.ConverterCLI) {
+	return &protobufFromJSONCLI{name}
 }
 
 func RegisterProtobufFromJSON(name string) {
-	streamconv.RegisterConverter(name, NewProtobufFromJSONCommand(name))
+	streamconv.RegisterConverter(name, NewProtobufFromJSONCLI(name))
 }
