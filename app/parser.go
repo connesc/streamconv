@@ -26,12 +26,6 @@ func parse(program string) (commands [][]string, err error) {
 		tokenStarted = false
 	}
 
-	endCommand := func() {
-		endToken()
-		commands = append(commands, tokens)
-		tokens = make([]string, 0)
-	}
-
 	for _, char := range program {
 		switch {
 		case escaped:
@@ -65,7 +59,9 @@ func parse(program string) (commands [][]string, err error) {
 				}
 			}
 		case char == '|':
-			endCommand()
+			endToken()
+			commands = append(commands, tokens)
+			tokens = make([]string, 0)
 		case unicode.IsSpace(char):
 			endToken()
 		case char == '\'' || char == '"':
@@ -85,6 +81,10 @@ func parse(program string) (commands [][]string, err error) {
 		return nil, io.ErrUnexpectedEOF
 	}
 
-	endCommand()
+	endToken()
+	if len(commands) > 0 || len(tokens) > 0 {
+		commands = append(commands, tokens)
+	}
+
 	return
 }
