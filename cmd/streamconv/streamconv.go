@@ -27,6 +27,7 @@ func main() {
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
 	converters.RegisterStreamConverter("streamconv")
 	combiners.RegisterJoinCombiner("join")
+	combiners.RegisterCatCombiner("cat")
 	combiners.RegisterVarintCombiner("join.varint")
 
 	help := false

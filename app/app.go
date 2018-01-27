@@ -28,7 +28,7 @@ var defaultExtractor = func(in io.Reader) (streamconv.ItemReader, error) {
 }
 
 var defaultCombiner = func(out io.Writer) (streamconv.ItemWriter, error) {
-	return combiners.NewJoinCombiner(out, ""), nil
+	return combiners.NewCatCombiner(out), nil
 }
 
 func New(program string) (app App, err error) {

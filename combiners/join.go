@@ -8,14 +8,14 @@ import (
 )
 
 type joinCombiner struct {
-	out     io.Writer
-	delim   string
-	started bool
+	out       io.Writer
+	delimiter string
+	started   bool
 }
 
 func (w *joinCombiner) WriteItem(item io.Reader) (err error) {
-	if w.started && len(w.delim) > 0 {
-		_, err = strings.NewReader(w.delim).WriteTo(w.out)
+	if w.started && len(w.delimiter) > 0 {
+		_, err = strings.NewReader(w.delimiter).WriteTo(w.out)
 		if err != nil {
 			return
 		}
@@ -26,9 +26,10 @@ func (w *joinCombiner) WriteItem(item io.Reader) (err error) {
 	return
 }
 
-func NewJoinCombiner(out io.Writer, delim string) streamconv.ItemWriter {
+func NewJoinCombiner(out io.Writer, delimiter string) streamconv.ItemWriter {
 	return &joinCombiner{
-		out:     out,
-		delim:   delim,
-		started: false}
+		out:       out,
+		delimiter: delimiter,
+		started:   false,
+	}
 }
