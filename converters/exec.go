@@ -15,34 +15,16 @@ type executor struct {
 
 type blockingReader struct {
 	reader io.Reader
-	done   <-chan error
-}
-
-func (r *blockingReader) checkError() (err error) {
-	select {
-	case err = <-r.done:
-	default:
-	}
-	return
+	wait   func() error
 }
 
 func (r *blockingReader) Read(p []byte) (n int, err error) {
-	err = r.checkError()
-	if err != nil {
-		return
-	}
-
 	n, err = r.reader.Read(p)
-
-	if err == io.EOF {
-		err = <-r.done
-		if err == nil {
-			err = io.EOF
+	if err != nil {
+		if initialErr := r.wait(); initialErr != nil {
+			err = initialErr
 		}
-	} else if err == nil {
-		err = r.checkError()
 	}
-
 	return
 }
 
@@ -55,18 +37,8 @@ func (c *executor) Convert(src io.Reader) (dst io.Reader, err error) {
 		return
 	}
 
-	done := make(chan error)
-	dst = &blockingReader{stdout, done}
-
+	dst = &blockingReader{stdout, cmd.Wait}
 	err = cmd.Start()
-	if err != nil {
-		return
-	}
-
-	go func() {
-		done <- cmd.Wait()
-	}()
-
 	return
 }
 
