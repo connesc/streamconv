@@ -23,14 +23,8 @@ type CombinerCLI interface {
 	Parse(args []string) (command CombinerCommand, err error)
 }
 
-type ExtractorCommand interface {
-	Run(in io.Reader) (extractor ItemReader, err error)
-}
+type ExtractorCommand func(in io.Reader) (extractor ItemReader, err error)
 
-type ConverterCommand interface {
-	Run() (converter Converter, err error)
-}
+type ConverterCommand func() (converter Converter, err error)
 
-type CombinerCommand interface {
-	Run(out io.Writer) (combiner ItemWriter, err error)
-}
+type CombinerCommand func(out io.Writer) (combiner ItemWriter, err error)

@@ -5,50 +5,96 @@ import (
 	"io"
 
 	"github.com/connesc/streamconv"
+	"github.com/connesc/streamconv/combiners"
+	"github.com/connesc/streamconv/extractors"
 )
 
 type App interface {
 	Run(dst io.Writer, src io.Reader) error
 }
 
-type streamconvApp [][]string
+type streamConverter interface {
+	Convert(src streamconv.ItemReader) (dst streamconv.ItemReader, err error)
+}
+
+type streamconvApp struct {
+	extractor  streamconv.ExtractorCommand
+	converters []streamConverter
+	combiner   streamconv.CombinerCommand
+}
+
+var defaultExtractor = func(in io.Reader) (streamconv.ItemReader, error) {
+	return extractors.NewSingleExtractor(in), nil
+}
+
+var defaultCombiner = func(out io.Writer) (streamconv.ItemWriter, error) {
+	return combiners.NewJoinCombiner(out, ""), nil
+}
 
 func New(program string) (app App, err error) {
 	commands, err := parse(program)
-	return streamconvApp(commands), err
+
+	var extractor streamconv.ExtractorCommand
+	var converters []streamConverter
+	var combiner streamconv.CombinerCommand
+
+	for _, tokens := range commands {
+		command, err := streamconv.ParseCommand(tokens)
+		if err != nil {
+			return nil, err
+		}
+
+		if combiner != nil {
+			converters = append(converters, &combinerConverter{combiner})
+			combiner = nil
+		}
+
+		if extractor == nil {
+			if command, ok := command.(streamconv.ExtractorCommand); ok {
+				extractor = command
+				continue
+			} else {
+				extractor = defaultExtractor
+			}
+		}
+
+		switch command := command.(type) {
+		case streamconv.ExtractorCommand:
+			converters = append(converters, &extractorConverter{command})
+		case streamconv.ConverterCommand:
+			converters = append(converters, &regularConverter{command})
+		case streamconv.CombinerCommand:
+			combiner = command
+		default:
+			return nil, fmt.Errorf("unknown command type: %T", command)
+		}
+	}
+
+	if extractor == nil {
+		extractor = defaultExtractor
+	}
+
+	if combiner == nil {
+		combiner = defaultCombiner
+	}
+
+	return &streamconvApp{extractor, converters, combiner}, nil
 }
 
 func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
-	if len(app) < 2 {
-		return fmt.Errorf("not enough commands")
-	}
-
-	reader, err := streamconv.GetExtractor(app[0], src)
+	reader, err := app.extractor(src)
 	if err != nil {
 		return
 	}
 
-	for _, command := range app[1 : len(app)-1] {
-		reader, err = streamconv.ApplyConverter(command, reader)
-		if err != nil {
-			return
-		}
+	for _, converter := range app.converters {
+		reader, err = converter.Convert(reader)
 	}
 
-	writer, err := streamconv.GetCombiner(app[len(app)-1], dst)
+	writer, err := app.combiner(dst)
 	if err != nil {
 		return
 	}
 
-	for {
-		item, err := reader.ReadItem()
-		if err != nil {
-			return err
-		}
-
-		err = writer.WriteItem(item)
-		if err != nil {
-			return err
-		}
-	}
+	return streamconv.Copy(writer, reader)
 }

@@ -7,14 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type streamConverterCommand struct {
-	program string
-}
-
-func (c *streamConverterCommand) Run() (converter streamconv.Converter, err error) {
-	return NewStreamConverter(c.program)
-}
-
 type streamConverterCLI struct {
 	name string
 }
@@ -29,7 +21,10 @@ func (c *streamConverterCLI) Parse(args []string) (command streamconv.ConverterC
 		return nil, fmt.Errorf("invalid number of arguments (exepcted 1, got %v)", len(args))
 	}
 
-	return &streamConverterCommand{args[0]}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewStreamConverter(args[0])
+	}
+	return
 }
 
 func NewStreamConverterCLI(name string) (cli streamconv.ConverterCLI) {

@@ -8,14 +8,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type splitExtractorCommand struct {
-	delimiter *regexp.Regexp
-}
-
-func (c *splitExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
-	return NewSingleExtractor(in), nil
-}
-
 type splitExtractorCLI struct {
 	name string
 }
@@ -40,7 +32,10 @@ func (c *splitExtractorCLI) Parse(args []string) (command streamconv.ExtractorCo
 		return
 	}
 
-	return &splitExtractorCommand{delimiter}, nil
+	command = func(in io.Reader) (streamconv.ItemReader, error) {
+		return NewSplitExtractor(in, delimiter), nil
+	}
+	return
 }
 
 func NewSplitExtractorCLI(name string) (cli streamconv.ExtractorCLI) {

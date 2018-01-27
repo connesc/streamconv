@@ -7,12 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type singleExtractorCommand struct{}
-
-func (c *singleExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
-	return NewSingleExtractor(in), nil
-}
-
 type singleExtractorCLI struct {
 	name string
 }
@@ -27,7 +21,10 @@ func (c *singleExtractorCLI) Parse(args []string) (command streamconv.ExtractorC
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return &singleExtractorCommand{}, nil
+	command = func(in io.Reader) (streamconv.ItemReader, error) {
+		return NewSingleExtractor(in), nil
+	}
+	return
 }
 
 func NewSingleExtractorCLI(name string) (cli streamconv.ExtractorCLI) {

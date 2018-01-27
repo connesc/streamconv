@@ -7,12 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type base64EncoderCommand struct{}
-
-func (c *base64EncoderCommand) Run() (converter streamconv.Converter, err error) {
-	return NewBase64Encoder(), nil
-}
-
 type base64EncoderCLI struct {
 	name string
 }
@@ -27,7 +21,10 @@ func (c *base64EncoderCLI) Parse(args []string) (command streamconv.ConverterCom
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return &base64EncoderCommand{}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewBase64Encoder(), nil
+	}
+	return
 }
 
 func NewBase64EncoderCLI(name string) (cli streamconv.ConverterCLI) {
@@ -36,12 +33,6 @@ func NewBase64EncoderCLI(name string) (cli streamconv.ConverterCLI) {
 
 func RegisterBase64Encoder(name string) {
 	streamconv.RegisterConverter(name, NewBase64EncoderCLI(name))
-}
-
-type base64DecoderCommand struct{}
-
-func (c *base64DecoderCommand) Run() (converter streamconv.Converter, err error) {
-	return NewBase64Decoder(), nil
 }
 
 type base64DecoderCLI struct {
@@ -58,7 +49,10 @@ func (c *base64DecoderCLI) Parse(args []string) (command streamconv.ConverterCom
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return &base64DecoderCommand{}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewBase64Decoder(), nil
+	}
+	return
 }
 
 func NewBase64DecoderCLI(name string) (cli streamconv.ConverterCLI) {

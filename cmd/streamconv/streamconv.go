@@ -15,10 +15,10 @@ import (
 )
 
 func main() {
-	extractors.RegisterJSONExtractor("json")
+	extractors.RegisterJSONExtractor("split.json")
 	extractors.RegisterSingleExtractor("single")
 	extractors.RegisterSplitExtractor("split")
-	extractors.RegisterVarintExtractor("varint")
+	extractors.RegisterVarintExtractor("split.varint")
 	extractors.RegisterWindowExtractor("window")
 	converters.RegisterBase64Encoder("base64.encode")
 	converters.RegisterBase64Decoder("base64.decode")
@@ -27,7 +27,7 @@ func main() {
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
 	converters.RegisterStreamConverter("streamconv")
 	combiners.RegisterJoinCombiner("join")
-	combiners.RegisterVarintCombiner("varint")
+	combiners.RegisterVarintCombiner("join.varint")
 
 	help := false
 	pflag.BoolVarP(&help, "help", "h", help, "print the general help, or the help of the given command")
@@ -46,11 +46,16 @@ func main() {
 		return
 	}
 
-	if pflag.NArg() != 1 {
-		log.Fatalf("invalid number of arguments (expected 1, got %v)\n", pflag.NArg())
+	if pflag.NArg() > 1 {
+		log.Fatalf("too many arguments (expected up to 1, got %v)\n", pflag.NArg())
 	}
 
-	app, err := app.New(pflag.Arg(0))
+	program := ""
+	if pflag.NArg() == 1 {
+		program = pflag.Arg(0)
+	}
+
+	app, err := app.New(program)
 	if err != nil {
 		log.Fatalln(err)
 	}

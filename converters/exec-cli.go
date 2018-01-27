@@ -7,15 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type executorCommand struct {
-	name string
-	args []string
-}
-
-func (c *executorCommand) Run() (converter streamconv.Converter, err error) {
-	return NewExecutor(c.name, c.args), nil
-}
-
 type executorCLI struct {
 	name string
 }
@@ -30,7 +21,10 @@ func (c *executorCLI) Parse(args []string) (command streamconv.ConverterCommand,
 		return nil, fmt.Errorf("at least one argument is expected")
 	}
 
-	return &executorCommand{args[0], args[1:]}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewExecutor(args[0], args[1:]), nil
+	}
+	return
 }
 
 func NewExecutorCLI(name string) (cli streamconv.ConverterCLI) {

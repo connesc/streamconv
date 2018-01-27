@@ -7,15 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type protobufToJSONCommand struct {
-	protoFile   string
-	messageName string
-}
-
-func (c *protobufToJSONCommand) Run() (converter streamconv.Converter, err error) {
-	return NewProtobufToJSON(c.protoFile, c.messageName)
-}
-
 type protobufToJSONCLI struct {
 	name string
 }
@@ -30,7 +21,10 @@ func (c *protobufToJSONCLI) Parse(args []string) (command streamconv.ConverterCo
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return &protobufToJSONCommand{args[0], args[1]}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewProtobufToJSON(args[0], args[1])
+	}
+	return
 }
 
 func NewProtobufToJSONCLI(name string) (cli streamconv.ConverterCLI) {
@@ -39,15 +33,6 @@ func NewProtobufToJSONCLI(name string) (cli streamconv.ConverterCLI) {
 
 func RegisterProtobufToJSON(name string) {
 	streamconv.RegisterConverter(name, NewProtobufToJSONCLI(name))
-}
-
-type protobufFromJSONCommand struct {
-	protoFile   string
-	messageName string
-}
-
-func (c *protobufFromJSONCommand) Run() (converter streamconv.Converter, err error) {
-	return NewProtobufFromJSON(c.protoFile, c.messageName)
 }
 
 type protobufFromJSONCLI struct {
@@ -64,7 +49,10 @@ func (c *protobufFromJSONCLI) Parse(args []string) (command streamconv.Converter
 		return nil, fmt.Errorf("invalid number of arguments (expected 2, got %v)", len(args))
 	}
 
-	return &protobufFromJSONCommand{args[0], args[1]}, nil
+	command = func() (streamconv.Converter, error) {
+		return NewProtobufFromJSON(args[0], args[1])
+	}
+	return
 }
 
 func NewProtobufFromJSONCLI(name string) (cli streamconv.ConverterCLI) {

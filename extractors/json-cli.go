@@ -7,12 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type jsonExtractorCommand struct{}
-
-func (c *jsonExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
-	return NewJSONExtractor(in), nil
-}
-
 type jsonExtractorCLI struct {
 	name string
 }
@@ -27,7 +21,10 @@ func (c *jsonExtractorCLI) Parse(args []string) (command streamconv.ExtractorCom
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return &jsonExtractorCommand{}, nil
+	command = func(in io.Reader) (streamconv.ItemReader, error) {
+		return NewJSONExtractor(in), nil
+	}
+	return
 }
 
 func NewJSONExtractorCLI(name string) (cli streamconv.ExtractorCLI) {

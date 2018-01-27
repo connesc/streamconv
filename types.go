@@ -13,3 +13,17 @@ type Converter interface {
 type ItemWriter interface {
 	WriteItem(item io.Reader) (err error)
 }
+
+func Copy(dst ItemWriter, src ItemReader) (err error) {
+	for {
+		item, err := src.ReadItem()
+		if err != nil {
+			return err
+		}
+
+		err = dst.WriteItem(item)
+		if err != nil {
+			return err
+		}
+	}
+}

@@ -7,12 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type varintCombinerCommand struct{}
-
-func (c *varintCombinerCommand) Run(out io.Writer) (combiner streamconv.ItemWriter, err error) {
-	return NewVarintCombiner(out), nil
-}
-
 type varintCombinerCLI struct {
 	name string
 }
@@ -27,7 +21,10 @@ func (c *varintCombinerCLI) Parse(args []string) (command streamconv.CombinerCom
 		return nil, fmt.Errorf("too many arguments (expected 0, got %v)", len(args))
 	}
 
-	return &varintCombinerCommand{}, nil
+	command = func(out io.Writer) (streamconv.ItemWriter, error) {
+		return NewVarintCombiner(out), nil
+	}
+	return
 }
 
 func NewVarintCombinerCLI(name string) (cli streamconv.CombinerCLI) {

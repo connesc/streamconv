@@ -7,14 +7,6 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type joinCombinerCommand struct {
-	delimiter string
-}
-
-func (c *joinCombinerCommand) Run(out io.Writer) (combiner streamconv.ItemWriter, err error) {
-	return NewJoinCombiner(out, c.delimiter), nil
-}
-
 type joinCombinerCLI struct {
 	name string
 }
@@ -34,7 +26,10 @@ func (c *joinCombinerCLI) Parse(args []string) (command streamconv.CombinerComma
 		delimiter = args[0]
 	}
 
-	return &joinCombinerCommand{delimiter}, nil
+	command = func(out io.Writer) (streamconv.ItemWriter, error) {
+		return NewJoinCombiner(out, delimiter), nil
+	}
+	return
 }
 
 func NewJoinCombinerCLI(name string) (cli streamconv.CombinerCLI) {

@@ -10,16 +10,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-type windowExtractorCommand struct {
-	step    int
-	size    int
-	partial bool
-}
-
-func (c *windowExtractorCommand) Run(in io.Reader) (extractor streamconv.ItemReader, err error) {
-	return NewWindowExtractor(in, c.step, c.size, c.partial), nil
-}
-
 type windowExtractorCLI struct {
 	name string
 }
@@ -71,7 +61,10 @@ func (c *windowExtractorCLI) Parse(args []string) (command streamconv.ExtractorC
 		return
 	}
 
-	return &windowExtractorCommand{int(size), int(step), options.partial}, nil
+	command = func(in io.Reader) (streamconv.ItemReader, error) {
+		return NewWindowExtractor(in, int(size), int(step), options.partial), nil
+	}
+	return
 }
 
 func NewWindowExtractorCLI(name string) (cli streamconv.ExtractorCLI) {
