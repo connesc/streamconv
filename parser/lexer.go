@@ -14,7 +14,7 @@ const (
 	tokenPipe tokenKind = iota
 	tokenLeftBrace
 	tokenRightBrace
-	tokenString
+	tokenWord
 )
 
 type token struct {
@@ -68,7 +68,7 @@ func (l *lexer) nextToken() (token *token) {
 		return token
 	}
 
-	return l.readString()
+	return l.nextWord()
 }
 
 func (l *lexer) skipSpaces() {
@@ -88,8 +88,8 @@ func (l *lexer) nextChar() {
 	}
 }
 
-func (l *lexer) readString() *token {
-	buffer := &bytes.Buffer{}
+func (l *lexer) nextWord() *token {
+	word := &bytes.Buffer{}
 
 	escaped := false
 
@@ -110,9 +110,9 @@ func (l *lexer) readString() *token {
 			complete = true
 		case escaped:
 			if escapedChar, found := escapedChars[l.char]; found {
-				buffer.WriteRune(escapedChar)
+				word.WriteRune(escapedChar)
 			} else {
-				buffer.WriteRune(l.char)
+				word.WriteRune(l.char)
 			}
 			escaped = false
 		case l.char == '\\':
@@ -121,7 +121,7 @@ func (l *lexer) readString() *token {
 			if l.char == quote {
 				quoted = false
 			} else {
-				buffer.WriteRune(l.char)
+				word.WriteRune(l.char)
 			}
 		case isSpecial(l.char) || unicode.IsSpace(l.char):
 			complete = true
@@ -129,11 +129,11 @@ func (l *lexer) readString() *token {
 			quoted = true
 			quote = l.char
 		default:
-			buffer.WriteRune(l.char)
+			word.WriteRune(l.char)
 		}
 
 		if complete {
-			return &token{tokenString, buffer.String()}
+			return &token{tokenWord, word.String()}
 		}
 
 		l.nextChar()

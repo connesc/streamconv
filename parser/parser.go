@@ -18,7 +18,7 @@ type parser struct {
 	token *token
 }
 
-func (p *parser) readProgram() (program Program) {
+func (p *parser) nextProgram() (program Program) {
 	if !p.ready {
 		p.nextToken()
 		p.ready = true
@@ -29,7 +29,7 @@ func (p *parser) readProgram() (program Program) {
 
 	for p.token != nil && p.token.kind != tokenRightBrace {
 		switch p.token.kind {
-		case tokenString:
+		case tokenWord:
 			if hasSubProgram {
 				panic(fmt.Errorf("unexpected token: %v", p.token.value))
 			}
@@ -39,7 +39,7 @@ func (p *parser) readProgram() (program Program) {
 				panic(fmt.Errorf("unexpected sub-program"))
 			}
 			p.nextToken()
-			command.SubProgram = p.readProgram()
+			command.SubProgram = p.nextProgram()
 			hasSubProgram = true
 			if p.token == nil || p.token.kind != tokenRightBrace {
 				panic(fmt.Errorf("closing brace not found"))
@@ -77,7 +77,7 @@ func Parse(reader io.Reader) (program Program, err error) {
 
 	parser := parser{lexer: newLexer(reader)}
 
-	program = parser.readProgram()
+	program = parser.nextProgram()
 	if parser.token != nil {
 		err = fmt.Errorf("unexpected token after the end of program")
 	}
