@@ -3,6 +3,8 @@ package streamconv
 import (
 	"fmt"
 	"io"
+
+	"github.com/connesc/streamconv/parser"
 )
 
 var clis = map[string]CLI{}
@@ -40,13 +42,15 @@ func RegisterCombiner(name string, combiner CombinerCLI) {
 	registerCLI(name, combiner)
 }
 
-func ParseCommand(tokens []string) (command interface{}, err error) {
-	if len(tokens) == 0 {
+func ParseCommand(source *parser.Command) (command interface{}, err error) {
+	// TODO: handle source.SubProgram
+
+	if len(source.Words) == 0 {
 		return nil, fmt.Errorf("empty command")
 	}
 
-	name := tokens[0]
-	args := tokens[1:]
+	name := source.Words[0]
+	args := source.Words[1:]
 
 	cli, ok := clis[name]
 	if !ok {

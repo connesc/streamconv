@@ -3,10 +3,12 @@ package app
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/connesc/streamconv"
 	"github.com/connesc/streamconv/combiners"
 	"github.com/connesc/streamconv/extractors"
+	"github.com/connesc/streamconv/parser"
 )
 
 type App interface {
@@ -32,14 +34,17 @@ var defaultCombiner = func(out io.Writer) (streamconv.ItemWriter, error) {
 }
 
 func New(program string) (app App, err error) {
-	commands, err := parse(program)
+	parsedProgram, err := parser.Parse(strings.NewReader(program))
+	if err != nil {
+		return
+	}
 
 	var extractor streamconv.ExtractorCommand
 	var converters []streamConverter
 	var combiner streamconv.CombinerCommand
 
-	for _, tokens := range commands {
-		command, err := streamconv.ParseCommand(tokens)
+	for _, commandSource := range parsedProgram {
+		command, err := streamconv.ParseCommand(commandSource)
 		if err != nil {
 			return nil, err
 		}
