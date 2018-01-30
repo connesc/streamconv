@@ -67,6 +67,12 @@ func New(program parser.Program) (app App, err error) {
 			transformers = append(transformers, &extractorTransformer{command})
 		case streamconv.ConverterCommand:
 			transformers = append(transformers, &converterTransformer{command})
+		case streamconv.TransformerCommand:
+			transformer, err := command()
+			if err != nil {
+				return nil, err
+			}
+			transformers = append(transformers, transformer)
 		case streamconv.CombinerCommand:
 			combiner = command
 		default:
