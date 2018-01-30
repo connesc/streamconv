@@ -38,6 +38,10 @@ func RegisterConverter(name string, converter ConverterCLI) {
 	registerCLI(name, converter)
 }
 
+func TransformerCombiner(name string, combiner TransformerCLI) {
+	registerCLI(name, combiner)
+}
+
 func RegisterCombiner(name string, combiner CombinerCLI) {
 	registerCLI(name, combiner)
 }
@@ -61,6 +65,8 @@ func ParseCommand(source *parser.Command) (command interface{}, err error) {
 	case ExtractorCLI:
 		command, err = cli.Parse(args)
 	case ConverterCLI:
+		command, err = cli.Parse(args)
+	case TransformerCLI:
 		command, err = cli.Parse(args)
 	case CombinerCLI:
 		command, err = cli.Parse(args)

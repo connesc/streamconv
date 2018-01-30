@@ -56,7 +56,7 @@ func main() {
 		program = pflag.Arg(0)
 	}
 
-	app, err := app.New(program)
+	app, err := app.Parse(program)
 	if err != nil {
 		log.Fatalln(err)
 	}

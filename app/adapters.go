@@ -6,12 +6,12 @@ import (
 	"github.com/connesc/streamconv"
 )
 
-type regularConverter struct {
+type converterTransformer struct {
 	command streamconv.ConverterCommand
 }
 
-func (c *regularConverter) Convert(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
-	converter, err := c.command()
+func (t *converterTransformer) Transform(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
+	converter, err := t.command()
 	if err != nil {
 		return
 	}
@@ -37,12 +37,12 @@ func (r *converterReader) ReadItem() (item io.Reader, err error) {
 	return
 }
 
-type extractorConverter struct {
+type extractorTransformer struct {
 	command streamconv.ExtractorCommand
 }
 
-func (c *extractorConverter) Convert(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
-	return &extractorReader{src, c.command, nil}, nil
+func (t *extractorTransformer) Transform(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
+	return &extractorReader{src, t.command, nil}, nil
 }
 
 type extractorReader struct {
@@ -76,12 +76,12 @@ func (r *extractorReader) ReadItem() (item io.Reader, err error) {
 	return
 }
 
-type combinerConverter struct {
+type combinerTransformer struct {
 	command streamconv.CombinerCommand
 }
 
-func (c *combinerConverter) Convert(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
-	return &combinerReader{src, c.command, false}, nil
+func (t *combinerTransformer) Transform(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
+	return &combinerReader{src, t.command, false}, nil
 }
 
 type combinerReader struct {

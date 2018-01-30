@@ -23,7 +23,7 @@ func (c *streamConverter) Convert(src io.Reader) (dst io.Reader, err error) {
 }
 
 func NewStreamConverter(program string) (converter streamconv.Converter, err error) {
-	app, err := app.New(program)
+	app, err := app.Parse(program)
 	if err != nil {
 		return
 	}

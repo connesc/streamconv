@@ -15,14 +15,10 @@ type App interface {
 	Run(dst io.Writer, src io.Reader) error
 }
 
-type streamConverter interface {
-	Convert(src streamconv.ItemReader) (dst streamconv.ItemReader, err error)
-}
-
 type streamconvApp struct {
-	extractor  streamconv.ExtractorCommand
-	converters []streamConverter
-	combiner   streamconv.CombinerCommand
+	extractor    streamconv.ExtractorCommand
+	transformers []streamconv.Transformer
+	combiner     streamconv.CombinerCommand
 }
 
 var defaultExtractor = func(in io.Reader) (streamconv.ItemReader, error) {
@@ -33,24 +29,27 @@ var defaultCombiner = func(out io.Writer) (streamconv.ItemWriter, error) {
 	return combiners.NewCatCombiner(out), nil
 }
 
-func New(program string) (app App, err error) {
+func Parse(program string) (app App, err error) {
 	parsedProgram, err := parser.Parse(strings.NewReader(program))
 	if err != nil {
 		return
 	}
+	return New(parsedProgram)
+}
 
+func New(program parser.Program) (app App, err error) {
 	var extractor streamconv.ExtractorCommand
-	var converters []streamConverter
+	var transformers []streamconv.Transformer
 	var combiner streamconv.CombinerCommand
 
-	for _, commandSource := range parsedProgram {
+	for _, commandSource := range program {
 		command, err := streamconv.ParseCommand(commandSource)
 		if err != nil {
 			return nil, err
 		}
 
 		if combiner != nil {
-			converters = append(converters, &combinerConverter{combiner})
+			transformers = append(transformers, &combinerTransformer{combiner})
 			combiner = nil
 		}
 
@@ -65,9 +64,9 @@ func New(program string) (app App, err error) {
 
 		switch command := command.(type) {
 		case streamconv.ExtractorCommand:
-			converters = append(converters, &extractorConverter{command})
+			transformers = append(transformers, &extractorTransformer{command})
 		case streamconv.ConverterCommand:
-			converters = append(converters, &regularConverter{command})
+			transformers = append(transformers, &converterTransformer{command})
 		case streamconv.CombinerCommand:
 			combiner = command
 		default:
@@ -83,7 +82,7 @@ func New(program string) (app App, err error) {
 		combiner = defaultCombiner
 	}
 
-	return &streamconvApp{extractor, converters, combiner}, nil
+	return &streamconvApp{extractor, transformers, combiner}, nil
 }
 
 func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
@@ -92,8 +91,11 @@ func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
 		return
 	}
 
-	for _, converter := range app.converters {
-		reader, err = converter.Convert(reader)
+	for _, transformer := range app.transformers {
+		reader, err = transformer.Transform(reader)
+		if err != nil {
+			return err
+		}
 	}
 
 	writer, err := app.combiner(dst)
