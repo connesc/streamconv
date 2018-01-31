@@ -20,7 +20,7 @@ type ConverterCLI interface {
 
 type TransformerCLI interface {
 	CLI
-	Parse(args []string) (command TransformerCommand, err error)
+	Parse(args []string, subProgram TransformerCommand) (command TransformerCommand, err error)
 }
 
 type CombinerCLI interface {

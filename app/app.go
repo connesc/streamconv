@@ -13,12 +13,13 @@ import (
 
 type App interface {
 	Run(dst io.Writer, src io.Reader) error
+	Transformer() streamconv.Transformer
 }
 
 type streamconvApp struct {
-	extractor    streamconv.ExtractorCommand
-	transformers []streamconv.Transformer
-	combiner     streamconv.CombinerCommand
+	extractor   streamconv.ExtractorCommand
+	transformer streamconv.Transformer
+	combiner    streamconv.CombinerCommand
 }
 
 var defaultExtractor = func(in io.Reader) (streamconv.ItemReader, error) {
@@ -43,13 +44,24 @@ func New(program parser.Program) (app App, err error) {
 	var combiner streamconv.CombinerCommand
 
 	for _, commandSource := range program {
-		command, err := streamconv.ParseCommand(commandSource)
+		var subProgram streamconv.TransformerCommand
+		if len(commandSource.SubProgram) > 0 {
+			subProgram = func() (streamconv.Transformer, error) {
+				app, err := New(commandSource.SubProgram)
+				if err != nil {
+					return nil, err
+				}
+				return app.Transformer(), nil
+			}
+		}
+
+		command, err := streamconv.ParseCommand(commandSource.Words, subProgram)
 		if err != nil {
 			return nil, err
 		}
 
 		if combiner != nil {
-			transformers = append(transformers, &combinerTransformer{combiner})
+			transformers = append(transformers, streamconv.NewCombinerTransformer(combiner))
 			combiner = nil
 		}
 
@@ -64,9 +76,9 @@ func New(program parser.Program) (app App, err error) {
 
 		switch command := command.(type) {
 		case streamconv.ExtractorCommand:
-			transformers = append(transformers, &extractorTransformer{command})
+			transformers = append(transformers, streamconv.NewExtractorTransformer(command))
 		case streamconv.ConverterCommand:
-			transformers = append(transformers, &converterTransformer{command})
+			transformers = append(transformers, streamconv.NewConverterTransformer(command))
 		case streamconv.TransformerCommand:
 			transformer, err := command()
 			if err != nil {
@@ -80,34 +92,44 @@ func New(program parser.Program) (app App, err error) {
 		}
 	}
 
+	return &streamconvApp{extractor, streamconv.Compose(transformers...), combiner}, nil
+}
+
+func (app *streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
+	extractor := app.extractor
 	if extractor == nil {
 		extractor = defaultExtractor
 	}
+	extractor = streamconv.Transform(extractor, app.transformer)
 
+	combiner := app.combiner
 	if combiner == nil {
 		combiner = defaultCombiner
 	}
 
-	return &streamconvApp{extractor, transformers, combiner}, nil
-}
-
-func (app streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
-	reader, err := app.extractor(src)
+	reader, err := extractor(src)
 	if err != nil {
 		return
 	}
 
-	for _, transformer := range app.transformers {
-		reader, err = transformer.Transform(reader)
-		if err != nil {
-			return err
-		}
-	}
-
-	writer, err := app.combiner(dst)
+	writer, err := combiner(dst)
 	if err != nil {
 		return
 	}
 
 	return streamconv.Copy(writer, reader)
+}
+
+func (app *streamconvApp) Transformer() streamconv.Transformer {
+	extractor := app.extractor
+	if extractor == nil {
+		extractor = defaultExtractor
+	}
+
+	transformer := app.transformer
+	if app.combiner != nil {
+		transformer = streamconv.Compose(transformer, streamconv.NewCombinerTransformer(app.combiner))
+	}
+
+	return streamconv.NewExtractorTransformer(streamconv.Transform(extractor, transformer))
 }

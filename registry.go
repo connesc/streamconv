@@ -3,8 +3,6 @@ package streamconv
 import (
 	"fmt"
 	"io"
-
-	"github.com/connesc/streamconv/parser"
 )
 
 var clis = map[string]CLI{}
@@ -46,15 +44,16 @@ func RegisterCombiner(name string, combiner CombinerCLI) {
 	registerCLI(name, combiner)
 }
 
-func ParseCommand(source *parser.Command) (command interface{}, err error) {
-	// TODO: handle source.SubProgram
-
-	if len(source.Words) == 0 {
+func ParseCommand(words []string, subProgram TransformerCommand) (command interface{}, err error) {
+	if len(words) == 0 {
+		if subProgram != nil {
+			return subProgram, nil
+		}
 		return nil, fmt.Errorf("empty command")
 	}
 
-	name := source.Words[0]
-	args := source.Words[1:]
+	name := words[0]
+	args := words[1:]
 
 	cli, ok := clis[name]
 	if !ok {
@@ -67,11 +66,16 @@ func ParseCommand(source *parser.Command) (command interface{}, err error) {
 	case ConverterCLI:
 		command, err = cli.Parse(args)
 	case TransformerCLI:
-		command, err = cli.Parse(args)
+		command, err = cli.Parse(args, subProgram)
+		subProgram = nil
 	case CombinerCLI:
 		command, err = cli.Parse(args)
 	default:
 		err = fmt.Errorf("unknown CLI type: %T", cli)
+	}
+
+	if err == nil && subProgram != nil {
+		err = fmt.Errorf("unexpected sub-program for command %v", name)
 	}
 	return
 }
