@@ -1,4 +1,10 @@
+PACKAGE = github.com/connesc/streamconv
+BIN = streamconv
+
 .PHONY: build
 
 build:
-	go build github.com/connesc/streamconv/cmd/streamconv
+	go build '${PACKAGE}/cmd/${BIN}'
+
+clean:
+	rm -f '${BIN}'
