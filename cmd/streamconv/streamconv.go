@@ -25,7 +25,6 @@ func main() {
 	converters.RegisterExecutor("exec")
 	converters.RegisterProtobufToJSON("protobuf.tojson")
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
-	converters.RegisterStreamConverter("streamconv")
 	combiners.RegisterJoinCombiner("join")
 	combiners.RegisterCatCombiner("cat")
 	combiners.RegisterVarintCombiner("join.varint")
