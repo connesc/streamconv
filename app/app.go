@@ -121,15 +121,14 @@ func (app *streamconvApp) Run(dst io.Writer, src io.Reader) (err error) {
 }
 
 func (app *streamconvApp) Transformer() streamconv.Transformer {
-	extractor := app.extractor
-	if extractor == nil {
-		extractor = defaultExtractor
+	transformers := make([]streamconv.Transformer, 0, 3)
+	if app.extractor != nil {
+		transformers = append(transformers, streamconv.NewExtractorTransformer(app.extractor))
 	}
-
-	transformer := app.transformer
+	transformers = append(transformers, app.transformer)
 	if app.combiner != nil {
-		transformer = streamconv.Compose(transformer, streamconv.NewCombinerTransformer(app.combiner))
+		transformers = append(transformers, streamconv.NewCombinerTransformer(app.combiner))
 	}
 
-	return streamconv.NewExtractorTransformer(streamconv.Transform(extractor, transformer))
+	return streamconv.Compose(transformers...)
 }

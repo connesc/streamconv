@@ -12,6 +12,7 @@ import (
 	"github.com/connesc/streamconv/combiners"
 	"github.com/connesc/streamconv/converters"
 	"github.com/connesc/streamconv/extractors"
+	"github.com/connesc/streamconv/transformers"
 )
 
 func main() {
@@ -19,12 +20,13 @@ func main() {
 	extractors.RegisterSingleExtractor("single")
 	extractors.RegisterSplitExtractor("split")
 	extractors.RegisterVarintExtractor("split.varint")
-	extractors.RegisterWindowExtractor("window")
+	extractors.RegisterWindowExtractor("window.bytes")
 	converters.RegisterBase64Encoder("base64.encode")
 	converters.RegisterBase64Decoder("base64.decode")
 	converters.RegisterExecutor("exec")
 	converters.RegisterProtobufToJSON("protobuf.tojson")
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
+	transformers.RegisterWindowTransformer("window")
 	combiners.RegisterJoinCombiner("join")
 	combiners.RegisterCatCombiner("cat")
 	combiners.RegisterVarintCombiner("join.varint")

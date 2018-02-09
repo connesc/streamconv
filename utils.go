@@ -162,3 +162,118 @@ func Transform(command ExtractorCommand, transformer Transformer) (transformed E
 		return transformer.Transform(extractor)
 	}
 }
+
+func TransformItems(transformer Transformer) (transformed Transformer) {
+	return &itemTransformer{
+		transformer: transformer,
+	}
+}
+
+type itemTransformer struct {
+	transformer Transformer
+}
+
+func (t *itemTransformer) Transform(src ItemReader) (dst ItemReader, err error) {
+	dst = &transformedItemReader{
+		reader:      src,
+		transformer: t.transformer,
+	}
+	return
+}
+
+type transformedItemReader struct {
+	reader      ItemReader
+	transformer Transformer
+	current     ItemReader
+	err         error
+}
+
+func (r *transformedItemReader) ReadItem() (item io.Reader, err error) {
+	if r.err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			r.err = err
+		}
+	}()
+
+	for {
+		if r.current == nil {
+			var src io.Reader
+			src, err = r.reader.ReadItem()
+			if err != nil {
+				return
+			}
+
+			r.current, err = r.transformer.Transform(&singleItemReader{item: src})
+			if err != nil {
+				return
+			}
+		}
+
+		item, err = r.current.ReadItem()
+		if err != io.EOF {
+			return
+		}
+		err = nil
+		r.current = nil
+	}
+}
+
+type singleItemReader struct {
+	item io.Reader
+	done bool
+}
+
+func (r *singleItemReader) ReadItem() (item io.Reader, err error) {
+	if r.done {
+		return nil, io.EOF
+	}
+	r.done = true
+	return r.item, nil
+}
+
+type LookaheadItemReader interface {
+	ItemReader
+	Lookahead() (head io.Reader, err error)
+}
+
+func NewLookaheadItemReader(reader ItemReader) LookaheadItemReader {
+	return &lookaheadItemReader{
+		reader: reader,
+	}
+}
+
+type lookaheadItemReader struct {
+	reader ItemReader
+	head   io.Reader
+	err    error
+}
+
+func (r *lookaheadItemReader) ReadItem() (item io.Reader, err error) {
+	switch {
+	case r.err != nil:
+		err = r.err
+	case r.head != nil:
+		item = r.head
+		r.head = nil
+	default:
+		item, err = r.reader.ReadItem()
+	}
+	return
+}
+
+func (r *lookaheadItemReader) Lookahead() (head io.Reader, err error) {
+	switch {
+	case r.err != nil:
+		err = r.err
+	case r.head != nil:
+		head = r.head
+	default:
+		head, err = r.reader.ReadItem()
+		r.head = head
+	}
+	return
+}

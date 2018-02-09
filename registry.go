@@ -36,7 +36,7 @@ func RegisterConverter(name string, converter ConverterCLI) {
 	registerCLI(name, converter)
 }
 
-func TransformerCombiner(name string, combiner TransformerCLI) {
+func RegisterTransformer(name string, combiner TransformerCLI) {
 	registerCLI(name, combiner)
 }
 
@@ -44,10 +44,20 @@ func RegisterCombiner(name string, combiner CombinerCLI) {
 	registerCLI(name, combiner)
 }
 
+func transformItemsCommand(command TransformerCommand) (transformed TransformerCommand) {
+	return func() (Transformer, error) {
+		transformer, err := command()
+		if err != nil {
+			return nil, err
+		}
+		return TransformItems(transformer), nil
+	}
+}
+
 func ParseCommand(words []string, subProgram TransformerCommand) (command interface{}, err error) {
 	if len(words) == 0 {
 		if subProgram != nil {
-			return subProgram, nil
+			return transformItemsCommand(subProgram), nil
 		}
 		return nil, fmt.Errorf("empty command")
 	}
