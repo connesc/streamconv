@@ -261,6 +261,7 @@ func (r *lookaheadItemReader) ReadItem() (item io.Reader, err error) {
 		r.head = nil
 	default:
 		item, err = r.reader.ReadItem()
+		r.err = err
 	}
 	return
 }
@@ -274,6 +275,7 @@ func (r *lookaheadItemReader) Lookahead() (head io.Reader, err error) {
 	default:
 		head, err = r.reader.ReadItem()
 		r.head = head
+		r.err = err
 	}
 	return
 }

@@ -15,14 +15,14 @@ type windowTransformerCLI struct {
 }
 
 type windowTransformerOptions struct {
-	partial bool
+	skipPartial bool
 }
 
 func (c *windowTransformerCLI) newFlagSet() (flags *pflag.FlagSet, options *windowTransformerOptions) {
 	options = &windowTransformerOptions{}
 	flags = pflag.NewFlagSet(c.name, pflag.ContinueOnError)
 	flags.Usage = func() {}
-	flags.BoolVar(&options.partial, "partial", false, "include partial groups")
+	flags.BoolVar(&options.skipPartial, "skip-partial", false, "skip the eventual partial group at the end")
 	return
 }
 
@@ -70,7 +70,7 @@ func (c *windowTransformerCLI) Parse(args []string, subProgram streamconv.Transf
 	}
 
 	command = func() (streamconv.Transformer, error) {
-		return NewWindowTransformer(subTransformer, uint(size), uint(step), options.partial), nil
+		return NewWindowTransformer(subTransformer, uint(size), uint(step), options.skipPartial), nil
 	}
 	return
 }
