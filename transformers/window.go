@@ -42,18 +42,68 @@ func skip(reader streamconv.ItemReader, count uint) (err error) {
 	return
 }
 
-type windowExtractor interface {
-	ExtractWindow() (window streamconv.ItemReader, err error)
+type windowReader interface {
+	streamconv.ItemReader
+	Initialize(first bool) (err error)
+	Finalize() (err error)
 }
 
 type partialWindowReader struct {
-	reader        streamconv.ItemReader
+	reader streamconv.LookaheadItemReader
+
+	size       uint
+	step       uint
+	overlap    uint
+	hole       uint
+	bufferStep uint
+
 	buffer        *windowBuffer
 	bufferIndex   uint
 	reusedCount   uint
 	readCount     uint
 	bufferedCount uint
 	err           error
+}
+
+func newPartialWindowReader(reader streamconv.ItemReader, size uint, step uint, overlap uint, hole uint) windowReader {
+	var bufferStep uint
+	if overlap > step {
+		bufferStep = step
+	} else {
+		bufferStep = overlap
+	}
+
+	return &partialWindowReader{
+		reader: streamconv.NewLookaheadItemReader(reader),
+
+		size:       size,
+		step:       step,
+		overlap:    overlap,
+		hole:       hole,
+		bufferStep: bufferStep,
+
+		buffer:        newWindowBuffer(overlap),
+		bufferIndex:   0,
+		reusedCount:   0,
+		readCount:     size,
+		bufferedCount: overlap,
+	}
+}
+
+func (r *partialWindowReader) Initialize(first bool) (err error) {
+	if !first {
+		err = skip(r.reader, r.hole)
+		if err != nil {
+			return
+		}
+		r.bufferIndex -= r.overlap
+		r.reusedCount = r.overlap
+		r.readCount = r.size - r.overlap
+		r.bufferedCount = r.bufferStep
+		r.err = nil
+	}
+	_, err = r.reader.Lookahead()
+	return
 }
 
 func (r *partialWindowReader) ReadItem() (item io.Reader, err error) {
@@ -94,76 +144,59 @@ func (r *partialWindowReader) ReadItem() (item io.Reader, err error) {
 	return
 }
 
-type partialWindowExtractor struct {
-	reader     streamconv.LookaheadItemReader
-	size       uint
-	step       uint
-	overlap    uint
-	hole       uint
-	bufferStep uint
-	current    *partialWindowReader
-	err        error
-}
-
-func (e *partialWindowExtractor) ExtractWindow() (window streamconv.ItemReader, err error) {
-	if e.err != nil {
-		return nil, e.err
-	}
-
-	defer func() {
-		if err != nil {
-			e.err = err
-		}
-	}()
-
-	if e.current == nil {
-		_, err = e.reader.Lookahead()
-		if err != nil {
-			return
-		}
-		e.current = &partialWindowReader{
-			reader:        e.reader,
-			buffer:        newWindowBuffer(e.overlap),
-			bufferIndex:   0,
-			reusedCount:   0,
-			readCount:     e.size,
-			bufferedCount: e.overlap,
-		}
-		window = e.current
-	} else if err = e.current.err; err != io.EOF {
-		if err == nil {
-			err = fmt.Errorf("the previous window has not been fully read")
-		}
-	} else {
-		err = skip(e.reader, e.hole)
-		if err != nil {
-			return
-		}
-		_, err = e.reader.Lookahead()
-		if err != nil {
-			return
-		}
-		e.current.bufferIndex -= e.overlap
-		e.current.reusedCount = e.overlap
-		e.current.readCount = e.size - e.overlap
-		e.current.bufferedCount = e.bufferStep
-		e.current.err = nil
-		window = e.current
-	}
-	return
+func (r *partialWindowReader) Finalize() (err error) {
+	return r.err
 }
 
 type completeWindowReader struct {
-	reader      streamconv.ItemReader
+	reader streamconv.ItemReader
+
+	size        uint
+	step        uint
+	overlap     uint
+	hole        uint
+	forwardLast bool
+
 	buffer      *windowBuffer
 	bufferIndex uint
-	forwardLast bool
 	lastItem    io.Reader
 	index       uint
 	err         error
 }
 
-func (r *completeWindowReader) fill() (err error) {
+func newCompleteWindowReader(reader streamconv.ItemReader, size uint, step uint, overlap uint, hole uint) windowReader {
+	forwardLast := overlap == 0
+	bufferLength := size
+	if forwardLast {
+		bufferLength--
+	}
+
+	return &completeWindowReader{
+		reader: reader,
+
+		size:        size,
+		step:        step,
+		overlap:     overlap,
+		hole:        hole,
+		forwardLast: forwardLast,
+
+		buffer:      newWindowBuffer(bufferLength),
+		bufferIndex: 0,
+		index:       0,
+	}
+}
+
+func (r *completeWindowReader) Initialize(first bool) (err error) {
+	if !first {
+		err = skip(r.reader, r.hole)
+		if err != nil {
+			return
+		}
+		r.bufferIndex -= r.overlap
+		r.index = r.overlap
+		r.err = nil
+	}
+
 	for i := uint(r.index); i < r.buffer.length; i++ {
 		var item io.Reader
 		item, err = r.reader.ReadItem()
@@ -217,67 +250,16 @@ func (r *completeWindowReader) ReadItem() (item io.Reader, err error) {
 	return
 }
 
-type completeWindowExtractor struct {
-	reader  streamconv.LookaheadItemReader
-	size    uint
-	step    uint
-	overlap uint
-	hole    uint
-	current *completeWindowReader
-	err     error
-}
-
-func (e *completeWindowExtractor) ExtractWindow() (window streamconv.ItemReader, err error) {
-	if e.err != nil {
-		return nil, e.err
-	}
-
-	defer func() {
-		if err != nil {
-			e.err = err
-		}
-	}()
-
-	if e.current == nil {
-		forwardLast := e.overlap == 0
-		bufferLength := e.size
-		if forwardLast {
-			bufferLength--
-		}
-		e.current = &completeWindowReader{
-			reader:      e.reader,
-			buffer:      newWindowBuffer(bufferLength),
-			bufferIndex: 0,
-			forwardLast: forwardLast,
-			index:       0,
-		}
-	} else if err = e.current.err; err != io.EOF {
-		if err == nil {
-			err = fmt.Errorf("the previous window has not been fully read")
-		}
-		return
-	} else {
-		err = skip(e.reader, e.hole)
-		if err != nil {
-			return
-		}
-		e.current.bufferIndex -= e.overlap
-		e.current.index = e.overlap
-		e.current.err = nil
-	}
-
-	err = e.current.fill()
-	if err == nil {
-		window = e.current
-	}
-	return
+func (r *completeWindowReader) Finalize() (err error) {
+	return r.err
 }
 
 type multiWindowReader struct {
-	extractor  windowExtractor
-	subProgram streamconv.Transformer
-	current    streamconv.ItemReader
-	err        error
+	reader      windowReader
+	subProgram  streamconv.Transformer
+	first       bool
+	transformed streamconv.ItemReader
+	err         error
 }
 
 func (r *multiWindowReader) ReadItem() (item io.Reader, err error) {
@@ -292,29 +274,43 @@ func (r *multiWindowReader) ReadItem() (item io.Reader, err error) {
 	}()
 
 	for {
-		if r.current == nil {
-			r.current, err = r.extractor.ExtractWindow()
+		if r.transformed == nil {
+			if !r.first {
+				err = r.reader.Finalize()
+				if err != io.EOF {
+					if err == nil {
+						err = fmt.Errorf("the previous window has not been fully read")
+					}
+					return
+				}
+			}
+
+			err = r.reader.Initialize(r.first)
 			if err != nil {
 				return
 			}
 
+			r.first = false
+
 			if r.subProgram != nil {
-				r.current, err = r.subProgram.Transform(r.current)
+				r.transformed, err = r.subProgram.Transform(r.reader)
 				if err != nil {
 					if err == io.EOF {
 						err = io.ErrUnexpectedEOF
 					}
 					return
 				}
+			} else {
+				r.transformed = r.reader
 			}
 		}
 
-		item, err = r.current.ReadItem()
+		item, err = r.transformed.ReadItem()
 		if err != io.EOF {
 			return
 		}
 		err = nil
-		r.current = nil
+		r.transformed = nil
 	}
 }
 
@@ -326,41 +322,24 @@ type windowTransformer struct {
 }
 
 func (t *windowTransformer) Transform(src streamconv.ItemReader) (dst streamconv.ItemReader, err error) {
-	var overlap, hole, bufferStep uint
+	var overlap, hole uint
 	if t.step < t.size {
 		overlap = t.size - t.step
-		if t.step < overlap {
-			bufferStep = t.step
-		} else {
-			bufferStep = overlap
-		}
 	} else {
 		hole = t.step - t.size
 	}
 
-	var extractor windowExtractor
+	var reader windowReader
 	if t.skipPartial {
-		extractor = &completeWindowExtractor{
-			reader:  streamconv.NewLookaheadItemReader(src),
-			size:    t.size,
-			step:    t.step,
-			overlap: overlap,
-			hole:    hole,
-		}
+		reader = newCompleteWindowReader(src, t.size, t.step, overlap, hole)
 	} else {
-		extractor = &partialWindowExtractor{
-			reader:     streamconv.NewLookaheadItemReader(src),
-			size:       t.size,
-			step:       t.step,
-			overlap:    overlap,
-			hole:       hole,
-			bufferStep: bufferStep,
-		}
+		reader = newPartialWindowReader(src, t.size, t.step, overlap, hole)
 	}
 
 	dst = &multiWindowReader{
-		extractor:  extractor,
+		reader:     reader,
 		subProgram: t.subProgram,
+		first:      true,
 	}
 	return
 }
