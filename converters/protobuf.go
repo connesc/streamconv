@@ -12,14 +12,25 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-var parser = protoparse.Parser{}
-var marshaller = jsonpb.Marshaler{}
-var unmarshaller = jsonpb.Unmarshaler{}
-var textMarshaller = proto.TextMarshaler{}
+func prepareMessage(importPaths []string, protoFile string, messageName string) (message proto.Message, err error) {
+	parser := protoparse.Parser{
+		ImportPaths: importPaths,
+	}
+
+	files, err := parser.ParseFiles(protoFile)
+	if err != nil {
+		return
+	}
+
+	descriptor := files[0].FindMessage(messageName)
+	message = dynamic.NewMessage(descriptor)
+	return
+}
 
 type toJSON struct {
-	message *dynamic.Message
-	buffer  *bytes.Buffer
+	message    proto.Message
+	buffer     *bytes.Buffer
+	marshaller *jsonpb.Marshaler
 }
 
 func (c *toJSON) Convert(src io.Reader) (dst io.Reader, err error) {
@@ -37,33 +48,38 @@ func (c *toJSON) Convert(src io.Reader) (dst io.Reader, err error) {
 	pr, pw := io.Pipe()
 
 	go func() {
-		err = marshaller.Marshal(pw, c.message)
+		err = c.marshaller.Marshal(pw, c.message)
 		pw.CloseWithError(err)
 	}()
 
 	return pr, nil
 }
 
-func NewProtobufToJSON(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufToJSON(importPaths []string, protoFile, messageName string, enumsAsInts bool, emitDefaults bool, indent string, origName bool) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
+	marshaller := &jsonpb.Marshaler{
+		EnumsAsInts:  enumsAsInts,
+		EmitDefaults: emitDefaults,
+		Indent:       indent,
+		OrigName:     origName,
+	}
 
-	converter = &toJSON{message, &bytes.Buffer{}}
+	converter = &toJSON{message, &bytes.Buffer{}, marshaller}
 	return
 }
 
 type fromJSON struct {
-	message *dynamic.Message
-	buffer  *proto.Buffer
+	message      proto.Message
+	unmarshaller *jsonpb.Unmarshaler
+	buffer       *proto.Buffer
 }
 
 func (c *fromJSON) Convert(src io.Reader) (dst io.Reader, err error) {
-	err = unmarshaller.Unmarshal(src, c.message)
+	err = c.unmarshaller.Unmarshal(src, c.message)
 	if err != nil {
 		return
 	}
@@ -73,22 +89,24 @@ func (c *fromJSON) Convert(src io.Reader) (dst io.Reader, err error) {
 	return bytes.NewReader(c.buffer.Bytes()), err
 }
 
-func NewProtobufFromJSON(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufFromJSON(importPaths []string, protoFile, messageName string, allowUnknownFields bool) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
+	unmarshaller := &jsonpb.Unmarshaler{
+		AllowUnknownFields: allowUnknownFields,
+	}
 
-	converter = &fromJSON{message, &proto.Buffer{}}
+	converter = &fromJSON{message, unmarshaller, &proto.Buffer{}}
 	return
 }
 
 type toText struct {
-	message *dynamic.Message
-	buffer  *bytes.Buffer
+	message    proto.Message
+	buffer     *bytes.Buffer
+	marshaller *proto.TextMarshaler
 }
 
 func (c *toText) Convert(src io.Reader) (dst io.Reader, err error) {
@@ -106,28 +124,30 @@ func (c *toText) Convert(src io.Reader) (dst io.Reader, err error) {
 	pr, pw := io.Pipe()
 
 	go func() {
-		err = textMarshaller.Marshal(pw, c.message)
+		err = c.marshaller.Marshal(pw, c.message)
 		pw.CloseWithError(err)
 	}()
 
 	return pr, nil
 }
 
-func NewProtobufToText(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufToText(importPaths []string, protoFile, messageName string, compact bool, expandAny bool) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
+	marshaller := &proto.TextMarshaler{
+		Compact:   compact,
+		ExpandAny: expandAny,
+	}
 
-	converter = &toText{message, &bytes.Buffer{}}
+	converter = &toText{message, &bytes.Buffer{}, marshaller}
 	return
 }
 
 type fromText struct {
-	message    *dynamic.Message
+	message    proto.Message
 	textBuffer *bytes.Buffer
 	buffer     *proto.Buffer
 }
@@ -149,25 +169,24 @@ func (c *fromText) Convert(src io.Reader) (dst io.Reader, err error) {
 	return bytes.NewReader(c.buffer.Bytes()), err
 }
 
-func NewProtobufFromText(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufFromText(importPaths []string, protoFile, messageName string) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
-
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
 
 	converter = &fromText{message, &bytes.Buffer{}, &proto.Buffer{}}
 	return
 }
 
 type jsonToText struct {
-	message *dynamic.Message
+	message      proto.Message
+	unmarshaller *jsonpb.Unmarshaler
+	marshaller   *proto.TextMarshaler
 }
 
 func (c *jsonToText) Convert(src io.Reader) (dst io.Reader, err error) {
-	err = unmarshaller.Unmarshal(src, c.message)
+	err = c.unmarshaller.Unmarshal(src, c.message)
 	if err != nil {
 		return
 	}
@@ -175,29 +194,36 @@ func (c *jsonToText) Convert(src io.Reader) (dst io.Reader, err error) {
 	pr, pw := io.Pipe()
 
 	go func() {
-		err = textMarshaller.Marshal(pw, c.message)
+		err = c.marshaller.Marshal(pw, c.message)
 		pw.CloseWithError(err)
 	}()
 
 	return pr, nil
 }
 
-func NewProtobufJSONToText(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufJSONToText(importPaths []string, protoFile, messageName string, allowUnknownFields bool, compact bool, expandAny bool) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
+	unmarshaller := &jsonpb.Unmarshaler{
+		AllowUnknownFields: allowUnknownFields,
+	}
 
-	converter = &jsonToText{message}
+	marshaller := &proto.TextMarshaler{
+		Compact:   compact,
+		ExpandAny: expandAny,
+	}
+
+	converter = &jsonToText{message, unmarshaller, marshaller}
 	return
 }
 
 type textToJSON struct {
-	message    *dynamic.Message
+	message    proto.Message
 	textBuffer *bytes.Buffer
+	marshaller *jsonpb.Marshaler
 }
 
 func (c *textToJSON) Convert(src io.Reader) (dst io.Reader, err error) {
@@ -215,22 +241,26 @@ func (c *textToJSON) Convert(src io.Reader) (dst io.Reader, err error) {
 	pr, pw := io.Pipe()
 
 	go func() {
-		err = marshaller.Marshal(pw, c.message)
+		err = c.marshaller.Marshal(pw, c.message)
 		pw.CloseWithError(err)
 	}()
 
 	return pr, nil
 }
 
-func NewProtobufTextToJSON(protoFile, messageName string) (converter streamconv.Converter, err error) {
-	files, err := parser.ParseFiles(protoFile)
+func NewProtobufTextToJSON(importPaths []string, protoFile, messageName string, enumsAsInts bool, emitDefaults bool, indent string, origName bool) (converter streamconv.Converter, err error) {
+	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	descriptor := files[0].FindMessage(messageName)
-	message := dynamic.NewMessage(descriptor)
+	marshaller := &jsonpb.Marshaler{
+		EnumsAsInts:  enumsAsInts,
+		EmitDefaults: emitDefaults,
+		Indent:       indent,
+		OrigName:     origName,
+	}
 
-	converter = &textToJSON{message, &bytes.Buffer{}}
+	converter = &textToJSON{message, &bytes.Buffer{}, marshaller}
 	return
 }
