@@ -24,6 +24,8 @@ func main() {
 	converters.RegisterBase64Encoder("base64.encode")
 	converters.RegisterBase64Decoder("base64.decode")
 	converters.RegisterExecutor("exec")
+	converters.RegisterJSONIndenter("json.indent")
+	converters.RegisterJSONCompactor("json.compact")
 	converters.RegisterProtobufToJSON("protobuf.tojson")
 	converters.RegisterProtobufFromJSON("protobuf.fromjson")
 	converters.RegisterProtobufToText("protobuf.totext")
