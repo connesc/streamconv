@@ -134,7 +134,6 @@ type protobufToTextCLI struct {
 type protobufToTextOptions struct {
 	importPaths []string
 	compact     bool
-	expandAny   bool
 }
 
 func (c *protobufToTextCLI) newFlagSet() (flags *pflag.FlagSet, options *protobufToTextOptions) {
@@ -143,7 +142,6 @@ func (c *protobufToTextCLI) newFlagSet() (flags *pflag.FlagSet, options *protobu
 	flags.Usage = func() {}
 	flags.StringArrayVarP(&options.importPaths, "proto-path", "I", nil, "directory in which to search for imports (can be repeated, defaults to . if not given)")
 	flags.BoolVarP(&options.compact, "compact", "c", false, "use compact text format (one line)")
-	flags.BoolVar(&options.expandAny, "expand-any", false, "expand google.protobuf.Any messages of known types")
 	return
 }
 
@@ -172,7 +170,7 @@ func (c *protobufToTextCLI) Parse(args []string) (command streamconv.ConverterCo
 	}
 
 	command = func() (streamconv.Converter, error) {
-		return NewProtobufToText(options.importPaths, args[0], args[1], options.compact, options.expandAny)
+		return NewProtobufToText(options.importPaths, args[0], args[1], options.compact)
 	}
 	return
 }
@@ -247,7 +245,6 @@ type protobufJSONToTextOptions struct {
 	importPaths        []string
 	allowUnknownFields bool
 	compact            bool
-	expandAny          bool
 }
 
 func (c *protobufJSONToTextCLI) newFlagSet() (flags *pflag.FlagSet, options *protobufJSONToTextOptions) {
@@ -257,7 +254,6 @@ func (c *protobufJSONToTextCLI) newFlagSet() (flags *pflag.FlagSet, options *pro
 	flags.StringArrayVarP(&options.importPaths, "proto-path", "I", nil, "directory in which to search for imports (can be repeated, defaults to . if not given)")
 	flags.BoolVarP(&options.allowUnknownFields, "allow-unknown", "k", false, "allow messages to contain unknown fields")
 	flags.BoolVarP(&options.compact, "compact", "c", false, "use compact text format (one line)")
-	flags.BoolVar(&options.expandAny, "expand-any", false, "expand google.protobuf.Any messages of known types")
 	return
 }
 
@@ -286,7 +282,7 @@ func (c *protobufJSONToTextCLI) Parse(args []string) (command streamconv.Convert
 	}
 
 	command = func() (streamconv.Converter, error) {
-		return NewProtobufJSONToText(options.importPaths, args[0], args[1], options.allowUnknownFields, options.compact, options.expandAny)
+		return NewProtobufJSONToText(options.importPaths, args[0], args[1], options.allowUnknownFields, options.compact)
 	}
 	return
 }

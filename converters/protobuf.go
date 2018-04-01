@@ -12,7 +12,7 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-func prepareMessage(importPaths []string, protoFile string, messageName string) (message proto.Message, err error) {
+func prepareMessage(importPaths []string, protoFile string, messageName string) (message *dynamic.Message, err error) {
 	parser := protoparse.Parser{
 		ImportPaths: importPaths,
 	}
@@ -27,8 +27,23 @@ func prepareMessage(importPaths []string, protoFile string, messageName string) 
 	return
 }
 
+func marshalText(message *dynamic.Message, compact bool) (item io.Reader, err error) {
+	var text []byte
+	if compact {
+		text, err = message.MarshalText()
+	} else {
+		text, err = message.MarshalTextIndent()
+	}
+	if err != nil {
+		return
+	}
+
+	item = bytes.NewReader(text)
+	return
+}
+
 type toJSON struct {
-	message    proto.Message
+	message    *dynamic.Message
 	buffer     *bytes.Buffer
 	marshaller *jsonpb.Marshaler
 }
@@ -73,7 +88,7 @@ func NewProtobufToJSON(importPaths []string, protoFile, messageName string, enum
 }
 
 type fromJSON struct {
-	message      proto.Message
+	message      *dynamic.Message
 	unmarshaller *jsonpb.Unmarshaler
 	buffer       *proto.Buffer
 }
@@ -104,9 +119,9 @@ func NewProtobufFromJSON(importPaths []string, protoFile, messageName string, al
 }
 
 type toText struct {
-	message    proto.Message
-	buffer     *bytes.Buffer
-	marshaller *proto.TextMarshaler
+	message *dynamic.Message
+	buffer  *bytes.Buffer
+	compact bool
 }
 
 func (c *toText) Convert(src io.Reader) (dst io.Reader, err error) {
@@ -121,33 +136,21 @@ func (c *toText) Convert(src io.Reader) (dst io.Reader, err error) {
 		return
 	}
 
-	pr, pw := io.Pipe()
-
-	go func() {
-		err = c.marshaller.Marshal(pw, c.message)
-		pw.CloseWithError(err)
-	}()
-
-	return pr, nil
+	return marshalText(c.message, c.compact)
 }
 
-func NewProtobufToText(importPaths []string, protoFile, messageName string, compact bool, expandAny bool) (converter streamconv.Converter, err error) {
+func NewProtobufToText(importPaths []string, protoFile, messageName string, compact bool) (converter streamconv.Converter, err error) {
 	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
 	}
 
-	marshaller := &proto.TextMarshaler{
-		Compact:   compact,
-		ExpandAny: expandAny,
-	}
-
-	converter = &toText{message, &bytes.Buffer{}, marshaller}
+	converter = &toText{message, &bytes.Buffer{}, compact}
 	return
 }
 
 type fromText struct {
-	message    proto.Message
+	message    *dynamic.Message
 	textBuffer *bytes.Buffer
 	buffer     *proto.Buffer
 }
@@ -180,9 +183,9 @@ func NewProtobufFromText(importPaths []string, protoFile, messageName string) (c
 }
 
 type jsonToText struct {
-	message      proto.Message
+	message      *dynamic.Message
 	unmarshaller *jsonpb.Unmarshaler
-	marshaller   *proto.TextMarshaler
+	compact      bool
 }
 
 func (c *jsonToText) Convert(src io.Reader) (dst io.Reader, err error) {
@@ -191,17 +194,10 @@ func (c *jsonToText) Convert(src io.Reader) (dst io.Reader, err error) {
 		return
 	}
 
-	pr, pw := io.Pipe()
-
-	go func() {
-		err = c.marshaller.Marshal(pw, c.message)
-		pw.CloseWithError(err)
-	}()
-
-	return pr, nil
+	return marshalText(c.message, c.compact)
 }
 
-func NewProtobufJSONToText(importPaths []string, protoFile, messageName string, allowUnknownFields bool, compact bool, expandAny bool) (converter streamconv.Converter, err error) {
+func NewProtobufJSONToText(importPaths []string, protoFile, messageName string, allowUnknownFields bool, compact bool) (converter streamconv.Converter, err error) {
 	message, err := prepareMessage(importPaths, protoFile, messageName)
 	if err != nil {
 		return
@@ -211,17 +207,12 @@ func NewProtobufJSONToText(importPaths []string, protoFile, messageName string, 
 		AllowUnknownFields: allowUnknownFields,
 	}
 
-	marshaller := &proto.TextMarshaler{
-		Compact:   compact,
-		ExpandAny: expandAny,
-	}
-
-	converter = &jsonToText{message, unmarshaller, marshaller}
+	converter = &jsonToText{message, unmarshaller, compact}
 	return
 }
 
 type textToJSON struct {
-	message    proto.Message
+	message    *dynamic.Message
 	textBuffer *bytes.Buffer
 	marshaller *jsonpb.Marshaler
 }
